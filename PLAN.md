@@ -5,6 +5,32 @@ Laboratorio para validar, antes de tocar los servidores del cliente, el método 
 ![Diagrama de la migración](doc/diagrama-migracion-rhel51.jpg)
 
 > El diagrama muestra el **flujo de producción** y se genera con el prompt [`doc/prompt-diagrama-migracion-rhel51.txt`](doc/prompt-diagrama-migracion-rhel51.txt). Este plan lo **simula paso a paso**: el notebook hace de GesNet y una cuenta de Huawei Cloud hace de destino.
+>
+> El procedimiento para producción, con los pasos de GesNet, Huawei e Integratel, está en [`IMPLEMENTATION-GUIDE.md`](IMPLEMENTATION-GUIDE.md).
+
+## Estado al 2026-11-19
+
+| Fase | Estado |
+|---|---|
+| 0 — Entorno | **Lista.** VMware Workstation 26, `rhel51-origen` con RHEL 5.1 oficial (ISO de Red Hat con SHA-256 verificado), IP `192.168.63.50`. `aux-copia` retirada |
+| 1 — Línea base | **Lista.** Inventario y 18 archivos de prueba (1.1 GB) en `/datos/prueba`. Snapshot `linea-base` |
+| 2 — VirtIO | **Variante A lista** (kernel `2.6.18-419.el5`). **Variante B en preparación:** clon aislado `rhel51-build` creado desde `linea-base`, falta compilar |
+| 3 — Ambiente Huawei | **Lista.** Bootstrap OIDC aplicado; workflow `ambiente` con `plan`, `deploy`, `destroy` y `armar-final` |
+| 4 a 6 — Exportar, OBS, EVS, ECS final | **Variante A lista:** SHA-256 origen = destino en los 2 discos; RHEL 5.1 arranca en el ECS con VirtIO y la misma IP |
+| 7 — Acta | **[`evidencia/acta-A.md`](evidencia/acta-A.md)**, con los 8 criterios cumplidos |
+| 8 — Vuelta atrás | **Variante A lista** |
+| 9 — Medición y extrapolación | Pendiente (hay velocidades medidas de la variante A) |
+| 10 — Cierre | **Ambiente destruido** y verificado sin recursos (2026-11-19). Faltan `decision-virtio.md` y el procedimiento final |
+
+**Próxima sesión.**
+1. Variante B:
+   - Compilar `virtio`, `virtio_ring`, `virtio_pci`, `virtio_blk` y `virtio_net` para `2.6.18-53.el5` en `rhel51-build`, a partir de `kernel-2.6.18-128.el5.src.rpm` (`rpmbuild -bp`, con `rpm-build` del DVD).
+   - Aplicarlos en el origen desde `linea-base` y probarlos en VMware.
+   - Llevarla a Huawei con el workflow (`deploy` → exportar → subir → `deploy final` → `armar-final`).
+   - Estabilidad, vuelta atrás, `acta-B.md` y `destroy`.
+2. `decision-virtio.md`.
+3. Fase 9.
+4. Procedimiento final.
 
 ---
 
@@ -314,15 +340,17 @@ Cada variante VirtIO puede correr en un ambiente nuevo (destroy y deploy) para q
 
 ## 8. Criterios de éxito
 
-- [ ] RHEL 5.1 arranca en el ECS final con la variante elegida.
-- [ ] SHA-256 origen = SHA-256 destino en el **100 %** de los discos.
-- [ ] La credencial de subida solo puede subir; el bucket es privado y cifrado.
-- [ ] Ningún ECS tuvo IP pública; el receptor leyó OBS por la red interna.
-- [ ] LVM, montajes y red operativos en el ECS final, **con la misma IP** que en VMware.
-- [ ] Los SHA-256 de los archivos de prueba coinciden con la línea base.
-- [ ] El origen arranca igual en VMware después de todo (vuelta atrás).
-- [ ] Velocidades medidas y ventanas estimadas para los 4 servidores.
-- [ ] Infraestructura destruida y sin cargos pendientes.
+Estado con la variante A (la B y la elección siguen pendientes):
+
+- [x] RHEL 5.1 arranca en el ECS final (variante A; falta elegir entre A y B).
+- [x] SHA-256 origen = SHA-256 destino en el **100 %** de los discos.
+- [x] La credencial de subida solo puede subir; el bucket es privado y cifrado.
+- [x] Ningún ECS tuvo IP pública; el receptor leyó OBS por la red interna.
+- [x] LVM, montajes y red operativos en el ECS final, **con la misma IP** que en VMware.
+- [x] Los SHA-256 de los archivos de prueba coinciden con la línea base.
+- [x] El origen arranca igual en VMware después de todo (vuelta atrás).
+- [ ] Velocidades medidas y ventanas estimadas para los 4 servidores (medidas sí; falta la estimación).
+- [x] Infraestructura destruida y sin cargos pendientes (2026-11-19).
 
 ---
 
@@ -331,10 +359,10 @@ Cada variante VirtIO puede correr en un ambiente nuevo (destroy y deploy) para q
 | Riesgo | Mitigación |
 |---|---|
 | El VMDK exportado (OVF, formato comprimido) no tiene el mismo hash de archivo que el disco original | Se comparan dos hashes distintos: el del archivo (transferencia) y el del contenido crudo (integridad del disco). El acta usa el del contenido |
-| El receptor sin EIP no alcanza OBS o los repositorios | Validarlo en la Fase 3; alternativa: NAT Gateway temporal, o subir el RPM de `qemu-img` al bucket |
-| La agencia IAM no sirve con `obsutil` en el receptor | Alternativa: credencial temporal de solo lectura, ingresada por consola VNC y nunca guardada en disco |
-| No se puede usar un EVS de datos como disco de sistema | Validarlo temprano en la Fase 6 |
-| El gateway de la subred de Huawei (`.1`) difiere del de VMware NAT (`.2`) | Ajustar `GATEWAY` en la entrada de GRUB/red de Huawei o fijar el gateway de la subred; documentar la diferencia para producción |
+| El receptor sin EIP no alcanza OBS o los repositorios | **Ocurrió con los repositorios:** OBS sí se alcanza por la red interna, pero `qemu-img` no se instala. El agente trae su propio conversor de VMDK |
+| La agencia IAM no sirve con `obsutil` en el receptor | El agente usa la biblioteca estándar de Python y la firma OBS con las credenciales del metadata service; el permiso lo da la política del bucket |
+| No se puede usar un EVS de datos como disco de sistema | **Ocurrió.** El EVS de sistema se crea desde una imagen y el receptor lo pone en cero antes de escribir |
+| El gateway de la subred de Huawei (`.1`) difiere del de VMware NAT (`.2`) | **No ocurrió:** Huawei aceptó el gateway `.2`. En producción, la subred replica el gateway de GesNet |
 | Kernel 2.6.18 inestable en el flavor elegido | Probar con flavor de pocas vCPU; registrar el flavor que funciona |
 | Costos olvidados en Huawei | Workflow `destroy` (verifica estado vacío) y revisión de la consola de facturación |
 | GitHub rota sus claves de firma OIDC y IAM rechaza el token | Volver a aplicar `terraform/bootstrap` (relee el JWKS) |
@@ -361,9 +389,9 @@ legacy-sap-coldcopy-poc/
 │   ├── bootstrap/                # proveedor OIDC + grupo (una vez, local)
 │   └── templates/                # cloud-init del receptor
 ├── scripts/
-│   ├── origen/                   # kickstart, inventario.sh, preparar-virtio-A.sh, preparar-virtio-B.sh
-│   ├── exportacion/              # exportar-ovf.ps1, hash-crudo.sh, subir-obs.ps1 (rol GesNet)
-│   ├── receptor/                 # escribir-evs.sh (obsutil + qemu-img + SHA-256)
-│   └── huawei/                   # armar-final.py (cambio de disco de sistema, Fase 6)
-└── evidencia/                    # antes/, despues/, acta-A.md, acta-B.md, decision-virtio.md
+│   ├── origen/                   # kickstart, inventario.sh, generar-datos-prueba.sh, preparar-virtio-A.sh (B: pendiente)
+│   ├── receptor/                 # coldcopy-receptor.py (OBS -> EVS, SHA-256, verificación y estabilidad por SSH)
+│   └── huawei/                   # armar-final.py, credencial-subida.py
+├── IMPLEMENTATION-GUIDE.md       # guía de producción: GesNet, Huawei e Integratel
+└── evidencia/                    # antes/, virtio-A/, acta-A.md (B y decision-virtio.md: pendientes)
 ```
