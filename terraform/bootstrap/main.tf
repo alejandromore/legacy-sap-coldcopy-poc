@@ -68,6 +68,18 @@ variable "github_repo" {
   description = "owner/repo autorizado a federarse"
 }
 
+variable "github_owner_id" {
+  type        = string
+  default     = "5015962"
+  description = "ID numérico del dueño (gh api repos/OWNER/REPO --jq .owner.id)"
+}
+
+variable "github_repo_id" {
+  type        = string
+  default     = "1463416754"
+  description = "ID numérico del repo (gh api repos/OWNER/REPO --jq .id)"
+}
+
 variable "github_environment" {
   type        = string
   default     = "huawei-lab"
@@ -83,7 +95,14 @@ variable "audience" {
 locals {
   prefix   = "legacy-coldcopy"
   idp_name = "github-${local.prefix}"
-  subject  = "repo:${var.github_repo}:environment:${var.github_environment}"
+  # GitHub emite el sub con los IDs inmutables de dueño y repo
+  # (repo:owner@<id>/repo@<id>:...); se acepta también el formato clásico.
+  owner = split("/", var.github_repo)[0]
+  repo  = split("/", var.github_repo)[1]
+  subjects = [
+    "repo:${var.github_repo}:environment:${var.github_environment}",
+    "repo:${local.owner}@${var.github_owner_id}/${local.repo}@${var.github_repo_id}:environment:${var.github_environment}",
+  ]
 }
 
 # Claves públicas con las que GitHub firma sus tokens OIDC. Si GitHub las
@@ -130,7 +149,7 @@ resource "huaweicloud_identity_provider_conversion" "github" {
     remote {
       attribute = "sub"
       condition = "any_one_of"
-      value     = [local.subject]
+      value     = local.subjects
     }
   }
 }
@@ -164,6 +183,6 @@ output "idp_id" {
   description = "Variable HW_IDP_ID del environment de GitHub"
 }
 
-output "subject" {
-  value = local.subject
+output "subjects" {
+  value = local.subjects
 }
