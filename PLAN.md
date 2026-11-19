@@ -115,7 +115,7 @@ Y además **medir la velocidad real** de cada tramo (subida a OBS y escritura en
 | P3 | `rhel51-origen` reducida: disco de sistema + disco LVM pequeño, sin datos productivos | Claude | Listo (2026-11-18): RHEL 5.1 instalado, IP `192.168.63.50`, snapshot `base` |
 | P4 | `aux-copia` con Rocky Linux 9.9 | Claude | Listo (2026-11-18). Falta instalar `qemu-img` |
 | P5 | AK/SK de administrador **solo para el bootstrap OIDC** (una vez, en local, variables de entorno). Después GitHub se federa por OIDC y no guarda ninguna AK/SK | Alejandro | Listo (2026-11-18): bootstrap aplicado |
-| P6 | Cuota en `la-south-2` para 2 ECS, 4 EVS, 1 bucket OBS, 1 agencia IAM (no se necesita EIP). Bucket de estados `obs-terraform-tfstate` existente (compartido con `nextcloud-huawei`) | Alejandro | Pendiente |
+| P6 | Cuota en `la-south-2` para 2 ECS, 4 EVS, 1 bucket OBS, 1 agencia IAM (no se necesita EIP). Bucket de estados `obs-terraform-tfstate` existente (compartido con `nextcloud-huawei`) | Alejandro | Listo (2026-11-18): el deploy no encontró límites |
 | P10 | Repositorio GitHub `alejandromore/legacy-sap-coldcopy-poc` con el environment `huawei-lab` y sus variables `HW_IDP_ID` y `HW_DOMAIN_NAME` | Claude | Listo (2026-11-18) |
 | P7 | Paquetes para las variantes VirtIO (§5) | Claude | Listo (2026-11-18) |
 | P8 | `obsutil` para Windows (descarga oficial de Huawei Cloud) | Claude, con confirmación de descarga | Pendiente |
@@ -179,6 +179,7 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 - Bootstrap OIDC (una vez) y luego workflow `ambiente` con `action=plan`, revisión del plan, y `action=deploy`, `etapa=recepcion`.
 - Credencial de subida: credencial temporal (AK/SK temporal + token) emitida con una **política reducida a `PutObject` en `incoming/`**, para `obsutil`. Es lo mismo que en producción se le entrega a GesNet.
 - **Validar temprano** (antes de la Fase 4): que el receptor sin EIP alcanza OBS por la red interna y que el cloud-init instaló `qemu-img` y `obsutil` (`/var/log/coldcopy-bootstrap.log`, por consola VNC).
+- **Estado (2026-11-18):** desplegado con `deploy`/`recepcion` ([run 44444599543](https://github.com/alejandromore/legacy-sap-coldcopy-poc/actions/runs/44444599543)), 15 recursos. Huawei aceptó el gateway `.2`. Receptor en `192.168.63.159` con los EVS `sistema` (40 GB) y `datos` (10 GB); ECS SAP final apagado en `192.168.63.50`; bucket `obs-legacy-coldcopy-vmdk`. Pendiente: validar cloud-init y acceso a OBS del receptor por VNC.
 
 ### Fase 4 — Exportación y subida (rol de GesNet, por cada variante)
 1. Apagar `rhel51-origen` (`poweroff`).
