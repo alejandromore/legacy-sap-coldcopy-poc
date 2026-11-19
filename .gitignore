@@ -21,3 +21,7 @@ id_*
 *.ovf
 *.mf
 export/
+
+# Python
+__pycache__/
+*.pyc

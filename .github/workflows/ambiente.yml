@@ -29,6 +29,10 @@ on:
         type: choice
         options: [recepcion, final]
         default: recepcion
+      reemplazar_receptor:
+        description: Recrear el ECS receptor (vuelve a correr cloud-init)
+        type: boolean
+        default: false
 
 # Dos applies contra el mismo estado se pisan; no se cancela el que corre.
 concurrency:
@@ -79,7 +83,12 @@ jobs:
 
       - name: terraform plan
         if: inputs.action != 'destroy'
-        run: terraform plan -var-file=terraform.tfvars -var "etapa=${{ inputs.etapa }}" -out=tfplan
+        run: |
+          extra=""
+          if [ "${{ inputs.reemplazar_receptor }}" = "true" ] && [ "${{ inputs.etapa }}" = "recepcion" ]; then
+            extra='-replace=huaweicloud_compute_instance.receptor[0]'
+          fi
+          terraform plan -var-file=terraform.tfvars -var "etapa=${{ inputs.etapa }}" $extra -out=tfplan
 
       - name: terraform apply
         if: inputs.action == 'deploy'

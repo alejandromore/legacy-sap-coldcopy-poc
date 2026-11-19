@@ -10,6 +10,14 @@ resource "random_password" "consola" {
   min_special      = 2
 }
 
+locals {
+  receptor_user_data = templatefile("${path.module}/templates/receptor-cloud-init.yaml.tftpl", {
+    bucket = var.obs_bucket_name
+    region = var.region
+    agente = file("${path.module}/../scripts/receptor/coldcopy-receptor.py")
+  })
+}
+
 resource "huaweicloud_compute_instance" "receptor" {
   count = local.receptor_enabled ? 1 : 0
 
@@ -24,16 +32,21 @@ resource "huaweicloud_compute_instance" "receptor" {
   system_disk_size            = 40
   delete_disks_on_termination = true
   enterprise_project_id       = var.enterprise_project_id
-  user_data = templatefile("${path.module}/templates/receptor-cloud-init.yaml.tftpl", {
-    bucket = var.obs_bucket_name
-    region = var.region
-    agente = file("${path.module}/../scripts/receptor/coldcopy-receptor.py")
-  })
-  tags = merge(local.tags, { rol = "receptor" })
+  user_data                   = local.receptor_user_data
+  tags                        = merge(local.tags, { rol = "receptor" })
 
   network {
     uuid = huaweicloud_vpc_subnet.lab.id
   }
+
+  # cloud-init solo corre al crear el ECS: un user_data nuevo exige otro ECS.
+  lifecycle {
+    replace_triggered_by = [terraform_data.receptor_user_data]
+  }
+}
+
+resource "terraform_data" "receptor_user_data" {
+  input = sha256(local.receptor_user_data)
 }
 
 # ECS SAP final: se crea apagado con un disco de sistema provisorio, que en
