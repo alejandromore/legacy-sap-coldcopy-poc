@@ -1,0 +1,98 @@
+Diagrama técnico apaisado (16:9), estilo infografía corporativa plana, fondo blanco. Migración en frío de un servidor SAP RHEL 5.1 desde GesNet (VMware) a Huawei Cloud vía OBS. Todo el texto en español, copiado LETRA POR LETRA de este documento.
+
+════════ REGLAS QUE NO SE PUEDEN ROMPER ════════
+R1. Cada componente es UNA CAJA rectangular con FONDO DE COLOR, icono a la izquierda, título en negrita y líneas debajo. Hay EXACTAMENTE 9 cajas y cada título aparece UNA SOLA VEZ en todo el diagrama: "Servidor SAP RHEL 5.1", "Discos VMDK", "Exportación OVF", "Bucket OBS", "ECS receptor", "Discos EVS", "ECS SAP final", "Integratel", "Acta de validación". Nunca dos cajas con el mismo título. Nunca texto suelto sin caja.
+R2. LA FORMA DE U: la fila INFERIOR contiene, alineadas en la MISMA línea horizontal: "Exportación OVF" (columna 1), "Bucket OBS" (columna 2), "ECS receptor" (columna 3). La flecha gruesa recorre esa fila de izquierda a derecha.
+R3. FLECHA GRUESA gris oscuro, dos tramos sobre la misma recta horizontal:
+    Tramo 1: nace en el BORDE DERECHO de la caja "Exportación OVF" → atraviesa la pastilla "HTTPS + credencial temporal" → su punta toca el BORDE IZQUIERDO de la caja "Bucket OBS".
+    Tramo 2: nace en el BORDE DERECHO de "Bucket OBS" → atraviesa la pastilla "Red interna, sin IP pública" → su punta toca el BORDE IZQUIERDO de la caja "ECS receptor".
+    Las pastillas van centradas SOBRE el eje de la flecha (la flecha entra por su izquierda y sale por su derecha). Sin números ni círculos sobre las flechas.
+R4. Flechas finas verticales (cadena completa, sin saltos):
+    Columna 1, hacia ABAJO: "Servidor SAP RHEL 5.1" → "Discos VMDK" (etiqueta "se apaga") → "Exportación OVF" (etiqueta "se exportan sin cambios").
+    Columna 3, hacia ARRIBA: "ECS receptor" → "Discos EVS" (etiqueta "escribe") → "ECS SAP final" (etiqueta "se reconectan").
+    Columna 3, hacia ABAJO: "Integratel" → "ECS SAP final" (etiqueta "VPN o Direct Connect").
+    NO existe ninguna flecha horizontal entre "ECS receptor" y "ECS SAP final".
+R5. Recuadros (solo borde, sin relleno):
+    - "Centro de datos GesNet": borde DISCONTINUO alrededor de toda la columna 1.
+    - "Huawei Cloud · la-south-2": UN SOLO rectángulo de borde gris continuo que envuelve JUNTAS la columna 2 y la columna 3 (Bucket OBS + VPC). Integratel queda FUERA.
+    - "VPC — misma subred que en GesNet": dentro del anterior, envuelve SOLO "ECS receptor", "Discos EVS", "ECS SAP final" y "CBR — respaldos". "Bucket OBS" y la pastilla "Red interna, sin IP pública" quedan FUERA de la VPC.
+R6. Colores de FONDO de caja: ÁMBAR claro (temporal) = "Servidor SAP RHEL 5.1", "Discos VMDK", "Exportación OVF", "Bucket OBS", "ECS receptor". GRIS medio (permanente) = "Discos EVS", "ECS SAP final". BLANCO con borde gris = "Integratel", "Acta de validación", todas las pastillas.
+R7. Palabras que ya salieron mal: "aprobado" (no "aprobo"), "respaldos" (no "respald dos"), "HTTPS + credencial temporal" (no "htats"). Cero typos.
+R9. Errores vistos en el intento 4 que NO se deben repetir:
+    - "Integratel" dentro del marco "Huawei Cloud · la-south-2": va FUERA, encima del marco.
+    - "Discos EVS" y "ECS SAP final" lado a lado: van APILADOS en la columna 3 (ECS SAP final arriba, Discos EVS al medio, ECS receptor abajo), con la flecha "se reconectan" de Discos EVS a ECS SAP final.
+    - Falta la pastilla "HTTPS + credencial temporal": es obligatoria sobre el tramo 1.
+    - "Red interna, sin IP pública" como texto suelto partido: es una PASTILLA blanca con el texto completo.
+    - "Un objeto por VMDK" repetido en Bucket OBS: aparece UNA vez.
+    - Subtítulo con "→ Se repite": el último separador es " · ", no flecha.
+    - "SHA-256 destino" con flecha sólida con punta: es SOLO una línea discontinua sin punta.
+    - "CBR — respaldos" unida a "ECS receptor": se une SOLO a "ECS SAP final".
+    - Flecha gruesa delgada: debe ser la más gruesa del diagrama.
+R8. No aparecen: SMS (salvo "Sin servicio SMS"), VM auxiliar, EIP, RMAN, Data Guard, IMS, Windows, cifras de tamaño o velocidad, direcciones IP, números en círculos sobre flechas, checks ni sellos.
+
+════════ POSICIÓN EXACTA (porcentaje del ancho X y del alto Y del lienzo) ════════
+- Encabezado rojo: Y 0–11 %, todo el ancho.
+- Rótulos de columna: Y 12–15 %. Columna 1 en X 2–22 %, columna 2 en X 25–43 %, columna 3 en X 46–76 %, tarjetas de notas en X 79–98 %.
+- "Integratel": X 52–70 %, Y 16–23 %. FUERA y ENCIMA del marco de Huawei Cloud.
+- Marco "Huawei Cloud · la-south-2": X 24–77 %, Y 25–77 %.
+- Marco "VPC — misma subred que en GesNet": X 45–76 %, Y 28–76 % (rótulo arriba a la izquierda, sin líneas encima).
+- Columna 3, las tres cajas UNA DEBAJO DE OTRA, mismo ancho X 48–66 %: "ECS SAP final" Y 31–43 %; "Discos EVS" Y 47–57 %; "ECS receptor" Y 62–75 %. Nada a la izquierda ni a la derecha de ellas salvo "CBR — respaldos" en X 68–75 %, Y 34–39 %.
+- Columna 1, "Centro de datos GesNet" X 1–23 %, Y 16–77 %: "Servidor SAP RHEL 5.1" Y 19–37 %; "Discos VMDK" Y 43–54 %; "Exportación OVF" Y 62–75 %.
+- Columna 2: "Bucket OBS" X 29–40 %, Y 62–75 %. Encima, en Y 25–60 % de la columna 2, NO hay nada.
+- Fila inferior: flecha gruesa a la altura Y 68 %, de X 22 % a X 29 % y de X 40 % a X 48 %. Pastilla "HTTPS + credencial temporal" centrada en X 25 %, Y 68 %; pastilla "Red interna, sin IP pública" centrada en X 43 %, Y 68 %.
+- "Acta de validación": X 1–77 %, Y 79–92 %. Leyenda: Y 94–99 %.
+
+════════ ENCABEZADO ════════
+Franja roja (#C7000B) a todo el ancho, texto blanco, logo de Huawei a la izquierda (única vez que aparece un logo).
+Título: "MIGRACIÓN EN FRÍO SAP RHEL 5.1 — EXPORTACIÓN VÍA OBS"
+A la derecha: "Huawei Cloud · la-south-2 (Santiago)"
+Subtítulo (una línea, separadores exactos): "Ambiente regulatorio sin transacciones · GesNet → Huawei Cloud → Integratel · Se repite por cada servidor"
+
+════════ COLUMNAS (rótulos en negrita) ════════
+Columna 1 "Origen — GesNet (VMware)" | Columna 2 "Transferencia — OBS" | Columna 3 "Destino — Huawei Cloud" | a la derecha, columna de 4 tarjetas de notas.
+
+Cuadrícula (cada celda es una caja; "—" = celda vacía):
+  Fila     | Columna 1               | Columna 2    | Columna 3
+  Acceso   | —                       | —            | Integratel
+  Superior | Servidor SAP RHEL 5.1   | —            | ECS SAP final   + pastilla CBR a su derecha
+  Media    | Discos VMDK             | —            | Discos EVS
+  Inferior | Exportación OVF  ═══▶   | Bucket OBS ═══▶ | ECS receptor
+
+════════ TEXTO DE CADA CAJA ════════
+"Servidor SAP RHEL 5.1" (icono servidor): SAP R/3 + Oracle 10g / Kernel 2.6.18-53.el5 / Kernel VirtIO agregado antes / Apagado durante la exportación / Queda intacto como respaldo
+"Discos VMDK" (icono discos): Disco de sistema / Discos de datos Oracle
+"Exportación OVF" (icono exportar): La realiza GesNet / Un VMDK por disco / Calcula SHA-256 en origen / Sube con obsutil
+"Bucket OBS" (icono cubeta): Privado y cifrado / GesNet solo puede subir / Un objeto por VMDK
+"ECS receptor" (icono servidor): Rocky Linux 9.9 / Descarga cada VMDK desde OBS / Lo escribe en EVS con qemu-img / Calcula SHA-256 en destino / Se elimina al terminar
+"Discos EVS" (icono discos): Contenido idéntico a cada VMDK / Mismo tamaño o mayor
+"ECS SAP final" (icono servidor con candado): Mismo RHEL 5.1, sin reinstalar / Arranca con VirtIO / Conserva su IP privada original / Sin IP pública
+"Integratel" (icono personas): Usuarios SAP del cliente / Acceso por red privada
+
+Pastillas pequeñas blancas:
+- "HTTPS + credencial temporal" (icono candado), sobre el tramo 1, encima del borde de "Huawei Cloud · la-south-2".
+- "Red interna, sin IP pública" (icono red), sobre el tramo 2, entre "Bucket OBS" y el borde de la VPC.
+- "CBR — respaldos" (icono escudo), en UNA línea, a la derecha de "ECS SAP final" dentro de la VPC, separada por un espacio que cruza una línea discontinua corta.
+
+Etiquetas sobre la flecha gruesa: tramo 1 "Discos exportados"; tramo 2 "Descarga".
+
+════════ ACTA (franja ancha bajo las tres columnas) ════════
+Caja blanca "Acta de validación" (icono documento). Contiene SOLO:
+- Una fila: pastilla "SHA-256 origen" (bajo columna 1)  ——  signo "=" grande al centro  ——  pastilla "SHA-256 destino" (bajo columna 3). Un único signo "=", ningún otro símbolo.
+- Debajo del "=", cuatro renglones apilados:
+  - Contenido de cada EVS igual a su VMDK
+  - Conteos de tablas SAP antes y después
+  - Reportes de referencia antes y después
+  - Firma de cumplimiento
+Líneas discontinuas finas sin punta: de "SHA-256 origen" recta hacia arriba a "Exportación OVF"; de "SHA-256 destino" recta hacia arriba a "ECS receptor" (la caja inmediatamente encima). Ninguna a "ECS SAP final".
+
+════════ TARJETAS DE NOTAS (columna derecha, blancas, borde gris) ════════
+"Origen — GesNet": • **SAP y Oracle** se detienen limpio • **Único cambio**: kernel VirtIO aprobado • **Origen** nunca se borra
+"Transferencia — OBS": • **Sin transacciones**: no hay delta • **Bucket privado**: GesNet solo sube • **Sin servicio SMS**: exportación OVF
+"Destino — Huawei Cloud": • **ECS receptor** es temporal • **Discos EVS** = discos originales • **Misma IP**: Integratel no cambia nada
+"Flujo de punta a punta": 1 Se agrega VirtIO y se apaga el servidor / 2 GesNet exporta los discos en OVF / 3 GesNet sube los VMDK a OBS / 4 ECS receptor descarga y escribe en EVS / 5 SHA-256 origen = SHA-256 destino / 6 Discos EVS al ECS SAP final / 7 Integratel accede con la misma IP
+
+════════ LEYENDA (pie) ════════
+"LEYENDA" + dos chips: gris "Permanente — vive durante toda la retención"; ámbar "Temporal — se retira al cerrar la migración".
+
+════════ PRUEBA DEL DEDO ════════
+Servidor SAP RHEL 5.1 ↓ Discos VMDK ↓ Exportación OVF ━▶ HTTPS + credencial temporal ━▶ Bucket OBS ━▶ Red interna, sin IP pública ━▶ ECS receptor ↑ Discos EVS ↑ ECS SAP final ↓ (desde) Integratel. Si el recorrido se corta, salta una caja o una caja se repite, está mal.

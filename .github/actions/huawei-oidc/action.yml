@@ -1,0 +1,89 @@
+# ============================================================================
+# Credenciales temporales de Huawei Cloud a partir del token OIDC de GitHub.
+#
+#   1. Pide a GitHub un id_token con audiencia `audience`.
+#   2. Lo canjea en IAM por un token federado (proveedor de identidad `idp-id`,
+#      creado por terraform/bootstrap).
+#   3. Convierte el token en AK/SK temporal + security token.
+#
+# Exporta HW_ACCESS_KEY, HW_SECRET_KEY, HW_SECURITY_TOKEN (provider) y
+# AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN (backend s3 de
+# OBS). Todos enmascarados. Requiere `permissions: id-token: write`.
+# ============================================================================
+name: huawei-oidc
+description: AK/SK temporal de Huawei Cloud via OIDC de GitHub Actions
+
+inputs:
+  idp-id:
+    description: ID del proveedor de identidad OIDC en IAM
+    required: true
+  domain-name:
+    description: Nombre de la cuenta de Huawei Cloud
+    required: true
+  audience:
+    description: Audiencia del id_token (client_id del proveedor de identidad)
+    default: huaweicloud
+  duration-seconds:
+    description: Vigencia de la credencial temporal (900 a 86400)
+    default: "7200"
+  iam-endpoint:
+    description: Endpoint de IAM
+    default: https://iam.myhuaweicloud.com
+
+runs:
+  using: composite
+  steps:
+    - name: Canjear el token OIDC por credenciales temporales
+      shell: bash
+      env:
+        IDP_ID: ${{ inputs.idp-id }}
+        DOMAIN_NAME: ${{ inputs.domain-name }}
+        AUDIENCE: ${{ inputs.audience }}
+        DURATION: ${{ inputs.duration-seconds }}
+        IAM: ${{ inputs.iam-endpoint }}
+      run: |
+        set -euo pipefail
+        if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+          echo "::error::Falta 'permissions: id-token: write' en el workflow"
+          exit 1
+        fi
+
+        jwt=$(curl -fsS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+          "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUDIENCE}" | jq -r .value)
+        echo "::add-mask::${jwt}"
+
+        body=$(jq -n --arg jwt "$jwt" --arg dom "$DOMAIN_NAME" \
+          '{auth:{id_token:{id:$jwt},scope:{domain:{name:$dom}}}}')
+        headers=$(mktemp)
+        code=$(curl -sS -o /dev/null -D "$headers" -w '%{http_code}' -X POST \
+          "${IAM}/v3.0/OS-AUTH/id-token/tokens" \
+          -H "Content-Type: application/json;charset=utf8" \
+          -H "X-Idp-Id: ${IDP_ID}" \
+          -d "$body")
+        if [ "$code" != "201" ]; then
+          echo "::error::IAM rechazó el token OIDC (HTTP ${code}). Revisar el proveedor ${IDP_ID}, la regla de conversión y el claim sub."
+          exit 1
+        fi
+        token=$(grep -i '^x-subject-token:' "$headers" | cut -d' ' -f2 | tr -d '\r')
+        rm -f "$headers"
+        echo "::add-mask::${token}"
+
+        cred=$(curl -fsS -X POST "${IAM}/v3.0/OS-CREDENTIAL/securitytokens" \
+          -H "Content-Type: application/json;charset=utf8" \
+          -H "X-Auth-Token: ${token}" \
+          -d "{\"auth\":{\"identity\":{\"methods\":[\"token\"],\"token\":{\"duration_seconds\":${DURATION}}}}}")
+        ak=$(echo "$cred" | jq -r .credential.access)
+        sk=$(echo "$cred" | jq -r .credential.secret)
+        st=$(echo "$cred" | jq -r .credential.securitytoken)
+        exp=$(echo "$cred" | jq -r .credential.expires_at)
+        for v in "$ak" "$sk" "$st"; do echo "::add-mask::${v}"; done
+
+        {
+          echo "HW_ACCESS_KEY=${ak}"
+          echo "HW_SECRET_KEY=${sk}"
+          echo "HW_SECURITY_TOKEN=${st}"
+          echo "AWS_ACCESS_KEY_ID=${ak}"
+          echo "AWS_SECRET_ACCESS_KEY=${sk}"
+          echo "AWS_SESSION_TOKEN=${st}"
+        } >> "$GITHUB_ENV"
+        echo "Credencial temporal válida hasta ${exp}"

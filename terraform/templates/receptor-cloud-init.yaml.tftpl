@@ -1,0 +1,16 @@
+#cloud-config
+# Receptor coldcopy: sin EIP. Llega a OBS y a los repositorios por la red
+# interna de Huawei Cloud (el DNS 100.125.x resuelve los dominios internos).
+packages:
+  - qemu-img
+  - jq
+write_files:
+  - path: /etc/coldcopy.env
+    permissions: "0644"
+    content: |
+      BUCKET=${bucket}
+      REGION=${region}
+      OBS_ENDPOINT=https://obs.${region}.myhuaweicloud.com
+runcmd:
+  - [bash, -c, "curl -fsSL -o /tmp/obsutil.tgz https://obs-community-intl.obs.ap-southeast-1.myhuaweicloud.com/obsutil/current/obsutil_linux_amd64.tar.gz && tar -xzf /tmp/obsutil.tgz -C /opt && ln -sf /opt/obsutil_linux_amd64_*/obsutil /usr/local/bin/obsutil"]
+  - [bash, -c, "{ qemu-img --version; obsutil version; } > /var/log/coldcopy-bootstrap.log 2>&1"]

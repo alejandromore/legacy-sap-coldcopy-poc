@@ -1,0 +1,113 @@
+# ============================================================================
+# Construcción y destrucción del ambiente Huawei Cloud del laboratorio
+#
+# Sin AK/SK guardadas en GitHub: el job se federa por OIDC
+# (.github/actions/huawei-oidc) con el proveedor de identidad que crea
+# terraform/bootstrap, y solo jobs del environment `huawei-lab` pueden hacerlo.
+#
+# Variables del environment huawei-lab (Settings > Environments):
+#   HW_IDP_ID       ID del proveedor de identidad (output idp_id del bootstrap)
+#   HW_DOMAIN_NAME  nombre de la cuenta de Huawei Cloud
+#
+# Acciones:
+#   plan     muestra los cambios, no aplica nada
+#   deploy   construye o actualiza el ambiente (etapa recepcion o final)
+#   destroy  destruye todo (el bucket OBS se vacía solo: force_destroy)
+# ============================================================================
+name: ambiente
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Acción sobre el ambiente
+        type: choice
+        options: [plan, deploy, destroy]
+        default: plan
+      etapa:
+        description: "recepcion: receptor con los EVS. final: sin receptor, EVS libres para el ECS SAP final"
+        type: choice
+        options: [recepcion, final]
+        default: recepcion
+
+# Dos applies contra el mismo estado se pisan; no se cancela el que corre.
+concurrency:
+  group: ambiente-huawei-lab
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_CLI_ARGS: "-no-color"
+  TERRAFORM_VERSION: "1.9.8"
+
+jobs:
+  terraform:
+    name: Terraform ${{ inputs.action }} (${{ inputs.etapa }})
+    runs-on: ubuntu-24.04
+    environment: huawei-lab
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Credenciales temporales por OIDC
+        uses: ./.github/actions/huawei-oidc
+        with:
+          idp-id: ${{ vars.HW_IDP_ID }}
+          domain-name: ${{ vars.HW_DOMAIN_NAME }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: terraform init
+        run: terraform init
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: terraform plan
+        if: inputs.action != 'destroy'
+        run: terraform plan -var-file=terraform.tfvars -var "etapa=${{ inputs.etapa }}" -out=tfplan
+
+      - name: terraform apply
+        if: inputs.action == 'deploy'
+        run: terraform apply tfplan
+
+      - name: terraform destroy
+        if: inputs.action == 'destroy'
+        run: terraform destroy -auto-approve -var-file=terraform.tfvars
+
+      # Comprobación de cierre: nada del laboratorio debe quedar facturando.
+      - name: Verificar que no quedó nada
+        if: inputs.action == 'destroy'
+        run: |
+          left=$(terraform state list | wc -l)
+          if [ "$left" -ne 0 ]; then
+            echo "::error::Quedaron ${left} recursos en el estado"
+            terraform state list
+            exit 1
+          fi
+          echo "Estado vacío: ambiente destruido" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Resumen
+        if: inputs.action == 'deploy'
+        run: |
+          {
+            echo "## Ambiente listo (etapa ${{ inputs.etapa }})"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Bucket OBS | \`$(terraform output -raw obs_bucket)\` |"
+            echo "| Receptor (IP privada) | \`$(terraform output -json receptor_private_ip | jq -r '. // "eliminado"')\` |"
+            echo "| ECS SAP final (IP privada) | \`$(terraform output -raw final_private_ip)\` |"
+            echo "| EVS | \`$(terraform output -json evs | jq -c 'map_values(.id)')\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

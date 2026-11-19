@@ -1,0 +1,23 @@
+# Descargas (instaladores, ISO, RPM)
+descargas/
+*.iso
+*.rpm
+*.vmdk
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+*.auto.tfvars
+tfplan
+*.tfplan
+
+# Llaves y credenciales
+*.pem
+*.key
+id_*
+!id_*.pub
+.env
+*.ovf
+*.mf
+export/
