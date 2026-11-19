@@ -1,7 +1,7 @@
 Genera una imagen: diagrama técnico apaisado (16:9), estilo infografía corporativa plana, fondo blanco. Migración en frío de un servidor SAP RHEL 5.1 desde GesNet (VMware) a Huawei Cloud vía OBS. Todo el texto visible en español, copiado LETRA POR LETRA de este documento. Pocas palabras, letra grande y legible.
 
 ════════ ENCABEZADO ════════
-Franja roja (#C7000B) a todo el ancho, con TODO su texto en BLANCO. Logo de Huawei a la izquierda (único logo del diagrama).
+Franja roja (#C7000B) a todo el ancho, con TODO su texto en BLANCO PURO (#FFFFFF), incluido el título grande: el título NUNCA va en rojo, rojo oscuro ni negro. Logo de Huawei a la izquierda (único logo del diagrama).
 Título: "MIGRACIÓN EN FRÍO SAP RHEL 5.1 — EXPORTACIÓN VÍA OBS"
 A la derecha: "Huawei Cloud · la-south-2 (Santiago)"
 Debajo de la franja, una línea en texto oscuro: "Ambiente regulatorio sin transacciones · GesNet → Huawei Cloud → Integratel · Se repite por cada servidor" (antes de "Se repite" va un punto medio, no una flecha).
@@ -10,8 +10,8 @@ Debajo de la franja, una línea en texto oscuro: "Ambiente regulatorio sin trans
 Tres paneles de columna, con su rótulo en negrita arriba:
 - Columna 1: rótulo "Origen — GesNet (VMware)". Panel con borde gris DISCONTINUO y el subrótulo "Centro de datos GesNet".
 - Columna 2: rótulo "Transferencia — OBS (Huawei Cloud)". Panel con borde gris continuo.
-- Columna 3: rótulo "Destino — Huawei Cloud". Panel con borde gris continuo. Dentro, un rectángulo de borde gris continuo con el rótulo "VPC — misma subred que en GesNet" en su esquina superior izquierda. La VPC es ALTA: su borde superior está por encima de "ECS SAP final" y su borde inferior está por DEBAJO de "ECS receptor". Envuelve las TRES cajas de la columna 3 ("ECS SAP final", "Discos EVS" y "ECS receptor") y la pastilla "CBR — respaldos". "ECS receptor" está DENTRO de la VPC.
-- Columna 4 (derecha), FUERA de los paneles: arriba la caja "Integratel", a la misma altura que "ECS SAP final"; debajo, las cuatro tarjetas de notas. "Integratel" NO está dentro de la VPC ni del panel de Destino.
+- Columna 3: rótulo "Destino — Huawei Cloud". Panel con borde gris continuo y el subrótulo "VPC — misma subred que en GesNet" (igual que "Centro de datos GesNet" en la columna 1). Ese panel ES la VPC: no se dibuja ningún rectángulo adicional dentro de él. Las tres cajas de la columna 3 y la pastilla "CBR — respaldos" están dentro de este panel.
+- Columna 4 (derecha), FUERA de los paneles: la caja "Integratel" en la MISMA FILA que "ECS SAP final" (su centro a la misma altura que el centro de "ECS SAP final"); debajo de "Integratel", las cuatro tarjetas de notas. "Integratel" NO está dentro del panel de Destino.
 Ningún borde envuelve todo el diagrama. Los bordes son grises, nunca rojos.
 
 ════════ CAJAS ════════
@@ -27,7 +27,7 @@ Colores de fondo: ÁMBAR = "Servidor SAP RHEL 5.1", "Discos VMDK", "Exportación
 En todo el diagrama hay EXACTAMENTE DOS flechas gruesas, gris oscuro, las más gruesas del dibujo, ambas sobre la recta de la fila de abajo, a la altura del centro de las cajas. No existe ninguna otra flecha gruesa: nada pasa por debajo de las cajas ni recorre el fondo del diagrama.
 - Flecha 1: nace en el borde derecho de "Exportación OVF" y su punta toca el borde izquierdo de "Bucket OBS". Encima, la etiqueta "Discos exportados". Sobre la flecha, centrada y tapándola, una pastilla blanca alargada que contiene JUNTOS el icono de candado y el texto "HTTPS + credencial temporal" en una línea.
 - Flecha 2: nace en el borde derecho de "Bucket OBS" y su punta toca el borde izquierdo de "ECS receptor". Encima, la etiqueta "Descarga". Sobre la flecha, centrada y tapándola, una pastilla blanca alargada que contiene JUNTOS el icono de red y el texto "Red interna, sin IP pública" en una línea.
-El texto de cada pastilla va DENTRO de la pastilla, no suelto debajo de la flecha.
+El texto de cada pastilla va DENTRO de la pastilla, no suelto debajo de la flecha. Cada pastilla queda en el espacio libre entre las dos cajas que une la flecha, sin tocar ni tapar ninguna caja. Deja espacio horizontal suficiente entre las cajas de la fila de abajo para que quepan.
 
 ════════ FLECHAS FINAS ════════
 Exactamente cinco, cada etiqueta pegada a su flecha:
@@ -35,9 +35,9 @@ Exactamente cinco, cada etiqueta pegada a su flecha:
 - "Discos VMDK" ↓ "Exportación OVF": "se exportan sin cambios".
 - "ECS receptor" ↑ "Discos EVS": "escribe".
 - "Discos EVS" ↑ "ECS SAP final": "se reconectan".
-- "Integratel" → "ECS SAP final": flecha horizontal recta que nace en el borde izquierdo de la caja "Integratel", cruza el borde del panel de Destino y de la VPC, y su punta toca el borde derecho de "ECS SAP final". Etiqueta "VPN o Direct Connect" en una sola línea, encima de esa flecha. Esta etiqueta aparece una sola vez.
+- "Integratel" → "ECS SAP final": flecha horizontal recta que NACE en el borde izquierdo de la caja "Integratel" (no en una tarjeta), cruza el borde del panel de Destino y su punta toca el borde derecho de "ECS SAP final". Etiqueta "VPN o Direct Connect" en una sola línea, encima de esa flecha. Esta etiqueta aparece una sola vez.
 
-"CBR — respaldos": pastilla blanca con escudo, en una línea, dentro de la VPC, a la derecha de "Discos EVS", unida a "Discos EVS" por una línea discontinua corta sin punta.
+"CBR — respaldos": pastilla blanca con escudo, en una línea, dentro del panel de Destino, a la derecha de "Discos EVS" y SEPARADA de ella por un espacio visible; ese espacio lo cruza una línea discontinua corta sin punta. La pastilla no se superpone a la caja.
 
 ════════ ACTA DE VALIDACIÓN ════════
 Franja ancha bajo las tres columnas: caja blanca con borde gris, icono de documento y título "Acta de validación". Contiene SOLO:
