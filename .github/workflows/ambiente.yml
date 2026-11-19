@@ -44,6 +44,9 @@ env:
   TF_INPUT: "false"
   TF_CLI_ARGS: "-no-color"
   TERRAFORM_VERSION: "1.9.8"
+  # OBS rechaza los checksums que el backend s3 agrega desde Terraform 1.11.
+  AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+  AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
 
 jobs:
   terraform:

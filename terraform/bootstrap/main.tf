@@ -3,6 +3,9 @@
 #
 # Se aplica UNA sola vez, en local, con las AK/SK de administrador en
 # variables de entorno (HW_ACCESS_KEY/HW_SECRET_KEY y AWS_* para el backend).
+# Con Terraform >= 1.11 exportar además AWS_REQUEST_CHECKSUM_CALCULATION y
+# AWS_RESPONSE_CHECKSUM_VALIDATION en when_required: OBS rechaza (400) los
+# checksums que el backend s3 agrega por defecto al guardar el estado.
 # Después de esto GitHub Actions obtiene credenciales temporales con su token
 # OIDC y ya no hace falta ninguna AK/SK guardada en GitHub.
 #
@@ -100,6 +103,12 @@ resource "huaweicloud_identity_provider" "github" {
     provider_url = "https://token.actions.githubusercontent.com"
     client_id    = var.audience
     signing_key  = data.http.github_jwks.response_body
+  }
+
+  # Solo aplican al inicio de sesión en consola; IAM no los devuelve para
+  # acceso programático y Terraform los vería como cambio en cada plan.
+  lifecycle {
+    ignore_changes = [access_config[0].response_mode, access_config[0].response_type]
   }
 }
 

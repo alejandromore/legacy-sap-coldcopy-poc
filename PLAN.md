@@ -114,9 +114,9 @@ Y además **medir la velocidad real** de cada tramo (subida a OBS y escritura en
 | P2 | ISO oficial RHEL 5.1 x86_64 (Binary DVD, SHA-256 publicado por Red Hat) | Claude, con la cuenta de Alejandro | En descarga (2026-11-18). No hay VM del cliente: se instala `rhel51-origen` desde cero |
 | P3 | `rhel51-origen` reducida: disco de sistema + disco LVM pequeño, sin datos productivos | Claude | Discos creados (12 GB + 4 GB). Pendiente reinstalar con RHEL 5.1 oficial |
 | P4 | `aux-copia` con Rocky Linux 9.9 | Claude | Listo (2026-11-18). Falta instalar `qemu-img` |
-| P5 | AK/SK de administrador **solo para el bootstrap OIDC** (una vez, en local, variables de entorno). Después GitHub se federa por OIDC y no guarda ninguna AK/SK | Alejandro | Pendiente |
+| P5 | AK/SK de administrador **solo para el bootstrap OIDC** (una vez, en local, variables de entorno). Después GitHub se federa por OIDC y no guarda ninguna AK/SK | Alejandro | Listo (2026-11-18): bootstrap aplicado |
 | P6 | Cuota en `la-south-2` para 2 ECS, 4 EVS, 1 bucket OBS, 1 agencia IAM (no se necesita EIP). Bucket de estados `obs-terraform-tfstate` existente (compartido con `nextcloud-huawei`) | Alejandro | Pendiente |
-| P10 | Repositorio GitHub `alejandromore/legacy-sap-coldcopy-poc` con el environment `huawei-lab` y sus variables `HW_IDP_ID` y `HW_DOMAIN_NAME` | Claude, con aprobación | Pendiente |
+| P10 | Repositorio GitHub `alejandromore/legacy-sap-coldcopy-poc` con el environment `huawei-lab` y sus variables `HW_IDP_ID` y `HW_DOMAIN_NAME` | Claude | Listo (2026-11-18) |
 | P7 | Paquetes para las variantes VirtIO (§5) | Claude | Listo (2026-11-18) |
 | P8 | `obsutil` para Windows (descarga oficial de Huawei Cloud) | Claude, con confirmación de descarga | Pendiente |
 | P9 | Credencial temporal de subida (AK/SK temporal + token de seguridad) limitada a `PutObject` en el bucket | Alejandro | Pendiente (se genera en la Fase 3) |
@@ -239,12 +239,14 @@ Todo el ambiente de Huawei se crea y se destruye desde GitHub Actions, **sin AK/
 | Grupo `grp-legacy-coldcopy-github` | Tenant Administrator (todos los proyectos) + Security Administrator (para la agencia y el rol del receptor). Suficiente para laboratorio; en producción se reduce por servicio |
 
 ```powershell
-$env:HW_ACCESS_KEY="..."; $env:HW_SECRET_KEY="..."; $env:AWS_ACCESS_KEY_ID=$env:HW_ACCESS_KEY; $env:AWS_SECRET_ACCESS_KEY=$env:HW_SECRET_KEY; $env:TF_VAR_domain_id="..."
+$env:HW_ACCESS_KEY="..."; $env:HW_SECRET_KEY="..."; $env:AWS_ACCESS_KEY_ID=$env:HW_ACCESS_KEY; $env:AWS_SECRET_ACCESS_KEY=$env:HW_SECRET_KEY; $env:TF_VAR_domain_id="..."; $env:AWS_REQUEST_CHECKSUM_CALCULATION="when_required"; $env:AWS_RESPONSE_CHECKSUM_VALIDATION="when_required"
 terraform -chdir=terraform/bootstrap init
 terraform -chdir=terraform/bootstrap apply
 ```
 
 Su output `idp_id` va a la variable `HW_IDP_ID` del environment `huawei-lab`. Después se borran las AK/SK de la sesión.
+
+**Estado:** aplicado el 2026-11-18. `HW_IDP_ID = github-legacy-coldcopy` y `HW_DOMAIN_NAME` cargadas en el environment `huawei-lab`.
 
 ### Workflow `ambiente` (`.github/workflows/ambiente.yml`)
 
