@@ -1,0 +1,6 @@
+{
+  "ip": "192.168.63.50",
+  "llave": "incoming/llave/legacy-coldcopy-rhel51",
+  "reinicios": 5,
+  "dd_mb": 4096
+}

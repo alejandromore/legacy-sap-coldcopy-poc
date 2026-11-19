@@ -39,7 +39,7 @@ Cómo se obtuvo cada hash:
 |---|---|---|
 | Huawei no acepta como disco de sistema un EVS creado vacío (`device is illegal`), ni siquiera marcándolo `bootable` | El EVS `sistema` no sirve como disco de sistema | El disco de sistema debe ser un EVS **creado desde una imagen**. El receptor lo pone en cero en el tramo del disco de origen y escribe encima. Aquí se reutilizó el disco de sistema original del ECS final. Hash verificado igual |
 | En flavors KVM el disco de sistema se conecta como `/dev/vda` | `/dev/sda` es rechazado | `armar-final.py` usa `/dev/vda`, `/dev/vdb`… |
-| La agencia del ECS no obtuvo acceso a OBS con un rol personalizado acotado al bucket | `AccessDenied` desde el receptor | Se usó `OBS OperateAccess`, que es más amplio. Pendiente acotarlo con una política de bucket |
+| La agencia del ECS no obtuvo acceso a OBS con un rol personalizado acotado al bucket | `AccessDenied` desde el receptor | En esta corrida se usó `OBS OperateAccess`. Después se reemplazó por una política del bucket que nombra a la agencia, validada sin `OBS OperateAccess` |
 | El receptor sin Internet no puede instalar `qemu-img` | — | El agente trae su propio conversor de VMDK streamOptimized, validado contra los hashes crudos |
 
 ## 4. Verificación del ECS final

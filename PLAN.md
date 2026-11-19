@@ -214,16 +214,18 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 
 Ajustes que salieron de la prueba y ya están en el código:
 
-1. **Disco de sistema desde imagen.** Huawei no acepta como disco de sistema un EVS creado vacío. El disco de sistema tiene que ser un EVS creado desde una imagen, sobre el que el receptor escribe tras ponerlo en cero (opción `limpiar` del manifiesto). En esta corrida se reutilizó el disco de sistema original del ECS final. Pendiente: que Terraform cree el EVS `sistema` con `image_id`.
+1. **Disco de sistema desde imagen.** Huawei no acepta como disco de sistema un EVS creado vacío. El disco de sistema tiene que ser un EVS creado desde una imagen, sobre el que el receptor escribe tras ponerlo en cero (opción `limpiar` del manifiesto). En esta corrida se reutilizó el disco de sistema original del ECS final. **Corregido:** Terraform crea el EVS de orden 0 con `image_id`.
 2. **Nombres de dispositivo.** En KVM los discos se conectan como `/dev/vda` y `/dev/vdb` ([`scripts/huawei/armar-final.py`](scripts/huawei/armar-final.py)).
-3. **Permisos de la agencia.** Necesitó `OBS OperateAccess`, porque el rol personalizado acotado al bucket no tuvo efecto. Pendiente acotarlo.
+3. **Permisos de la agencia.** Necesitó `OBS OperateAccess`, porque el rol personalizado acotado al bucket no tuvo efecto. **Corregido:** una política del bucket nombra a la agencia (`domain/<cuenta>:agency/<agencia>`) y le da solo `ListBucket`/`HeadBucket`, `GetObject` en `incoming/` y `PutObject` en `resultados/`. Validado: el receptor lista, lee y escribe sin `OBS OperateAccess`, que queda detrás de `receptor_obs_operate_access = false`.
 4. **Receptor sin Internet.** Sin `qemu-img`, usa un agente en Python con biblioteca estándar ([`scripts/receptor/coldcopy-receptor.py`](scripts/receptor/coldcopy-receptor.py)) que:
    - lee OBS con las credenciales de la agencia;
    - escribe los EVS con su propio conversor de VMDK;
    - publica los resultados;
    - verifica el ECS final por SSH.
 5. **Diagnóstico sin SSH.** La consola serie del ECS (API `os-getConsoleOutput`) es la única ventana; ahí escriben el agente y el kernel del RHEL.
-6. **Credencial de subida.** La credencial temporal reducida dejó de ser válida antes de su vencimiento. Se volvió a emitir sin problemas.
+6. **Credencial de subida.** La credencial temporal reducida deja de valer a los ~60 minutos, aunque `expires_at` diga más. **Corregido:** [`scripts/huawei/credencial-subida.py`](scripts/huawei/credencial-subida.py) la emite (1 hora por defecto) y escribe la configuración de `obsutil`; para subidas largas se vuelve a emitir y se reanuda.
+7. **Destroy seguro.** El ECS final borra al destruirse los discos que tenga conectados (`delete_disks_on_termination = true`), incluido uno que Terraform no conozca, y se destruye antes que los EVS (`depends_on`).
+8. **Armado en el workflow.** `ambiente` → `armar-final` corre [`armar-final.py`](scripts/huawei/armar-final.py) con credenciales OIDC sobre los EVS del estado, en orden.
 
 ### Fase 7 — Acta de validación
 - `evidencia/acta-<variante>.md`, con la misma estructura que el acta del diagrama:
