@@ -27,6 +27,7 @@ resource "huaweicloud_compute_instance" "receptor" {
   user_data = templatefile("${path.module}/templates/receptor-cloud-init.yaml.tftpl", {
     bucket = var.obs_bucket_name
     region = var.region
+    agente = file("${path.module}/../scripts/receptor/coldcopy-receptor.py")
   })
   tags = merge(local.tags, { rol = "receptor" })
 
