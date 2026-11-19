@@ -55,17 +55,23 @@ runs:
         body=$(jq -n --arg jwt "$jwt" --arg dom "$DOMAIN_NAME" \
           '{auth:{id_token:{id:$jwt},scope:{domain:{name:$dom}}}}')
         headers=$(mktemp)
-        code=$(curl -sS -o /dev/null -D "$headers" -w '%{http_code}' -X POST \
+        resp=$(mktemp)
+        code=$(curl -sS -o "$resp" -D "$headers" -w '%{http_code}' -X POST \
           "${IAM}/v3.0/OS-AUTH/id-token/tokens" \
           -H "Content-Type: application/json;charset=utf8" \
           -H "X-Idp-Id: ${IDP_ID}" \
           -d "$body")
         if [ "$code" != "201" ]; then
           echo "::error::IAM rechazó el token OIDC (HTTP ${code}). Revisar el proveedor ${IDP_ID}, la regla de conversión y el claim sub."
+          echo "Respuesta de IAM: $(cat "$resp")"
+          # Claims no sensibles del id_token, para compararlos con la regla.
+          payload=$(echo "$jwt" | cut -d. -f2 | tr '_-' '/+')
+          while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="${payload}="; done
+          echo "$payload" | base64 -d | jq -c '{iss, aud, sub}' || true
           exit 1
         fi
         token=$(grep -i '^x-subject-token:' "$headers" | cut -d' ' -f2 | tr -d '\r')
-        rm -f "$headers"
+        rm -f "$headers" "$resp"
         echo "::add-mask::${token}"
 
         cred=$(curl -fsS -X POST "${IAM}/v3.0/OS-CREDENTIAL/securitytokens" \
