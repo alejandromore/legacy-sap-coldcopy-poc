@@ -10,6 +10,10 @@
 #      si no, conversor streamOptimized propio) y calcula el SHA-256 del EVS
 #      sobre exactamente el tamaño virtual del disco.
 #   4. Sube resultados/<variante>/resultado.json con hashes y tiempos.
+#   5. Si existe incoming/<variante>/verificar.json (Fase 6), entra por SSH
+#      al ECS SAP final dentro de la VPC, corre el inventario y publica
+#      resultados/<variante>/inventario-despues.txt. Reintenta cada minuto
+#      hasta que el ECS final responda.
 #
 # Credenciales: las temporales de la agencia del ECS, desde el metadata
 # service. Ninguna AK/SK vive en el disco.
@@ -89,6 +93,40 @@ def listar(prefix):
         if root.findtext(ns + "IsTruncated") != "true" or not page:
             return keys
         marker = page[-1]
+
+
+def put_text(key, texto):
+    obs("PUT", key, body=texto.encode(), ctype="text/plain").read()
+
+
+def get_bytes(key):
+    return obs("GET", key).read()
+
+
+def verificar(key):
+    var = key.split("/")[1]
+    cfg = json.loads(get_bytes(key))
+    llave = os.path.join(STATE, "llave-" + var)
+    with open(llave, "wb") as f:
+        f.write(get_bytes(cfg["llave"]))
+    os.chmod(llave, 0o600)
+    script = get_bytes(cfg["inventario"])
+    # OpenSSH 4.3 de RHEL 5: ssh-rsa (SHA-1) y grupo 14 SHA-1. Requiere la
+    # política de cifrado LEGACY en el receptor (cloud-init).
+    cmd = ["ssh", "-i", llave, "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
+           "-o", "ConnectTimeout=10", "-o", "BatchMode=yes",
+           "-o", "HostKeyAlgorithms=+ssh-rsa", "-o", "PubkeyAcceptedAlgorithms=+ssh-rsa",
+           "-o", "KexAlgorithms=+diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1",
+           "root@" + cfg["ip"], "bash -s"]
+    t0 = time.time()
+    p = subprocess.run(cmd, input=script, capture_output=True, timeout=900)
+    if p.returncode != 0:
+        log("Verificación %s: el ECS final aún no responde (%s)" % (var, p.stderr.decode(errors="replace").strip()[-200:]))
+        return
+    put_text("resultados/%s/inventario-despues.txt" % var, p.stdout.decode(errors="replace"))
+    open(os.path.join(STATE, var + ".verificado"), "w").write("%.0f s" % (time.time() - t0))
+    os.remove(llave)
+    log("Verificación %s publicada" % var)
 
 
 def lsblk():
@@ -208,9 +246,23 @@ def main():
         "hechos": sorted(os.listdir(STATE)),
     }
     try:
-        for key in listar("incoming/"):
+        claves = listar("incoming/")
+        for key in claves:
+            if key.endswith("/verificar.json"):
+                var = key.split("/")[1]
+                if not os.path.exists(os.path.join(STATE, var + ".verificado")):
+                    try:
+                        verificar(key)
+                    except Exception:
+                        log(traceback.format_exc())
+        # Un receptor recreado no tiene marcas locales: lo ya publicado en
+        # resultados/ cuenta como hecho y no se vuelve a escribir en los EVS.
+        publicados = set(listar("resultados/"))
+        for key in claves:
             if key.endswith("/manifiesto.json"):
                 var = key.split("/")[1]
+                if "resultados/%s/resultado.json" % var in publicados:
+                    continue
                 if not os.path.exists(os.path.join(STATE, var + ".hecho")):
                     try:
                         procesar(key)

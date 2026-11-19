@@ -40,6 +40,8 @@ write_files:
       [Install]
       WantedBy=timers.target
 runcmd:
+  # Para entrar por SSH al RHEL 5.1 (OpenSSH 4.3: ssh-rsa y KEX SHA-1).
+  - [update-crypto-policies, --set, LEGACY]
   - [systemctl, daemon-reload]
   - [systemctl, enable, --now, coldcopy-receptor.timer]
   - [bash, -c, "timeout 600 dnf -y install qemu-img > /var/log/coldcopy-qemu-img.log 2>&1 || echo 'qemu-img no disponible: se usa el conversor propio' >> /var/log/coldcopy-qemu-img.log"]

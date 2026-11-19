@@ -25,7 +25,7 @@ on:
         options: [plan, deploy, destroy]
         default: plan
       etapa:
-        description: "recepcion: receptor con los EVS. final: sin receptor, EVS libres para el ECS SAP final"
+        description: "recepcion: receptor con los EVS. final: EVS libres para el ECS SAP final; el receptor queda para verificar"
         type: choice
         options: [recepcion, final]
         default: recepcion
@@ -85,7 +85,7 @@ jobs:
         if: inputs.action != 'destroy'
         run: |
           extra=""
-          if [ "${{ inputs.reemplazar_receptor }}" = "true" ] && [ "${{ inputs.etapa }}" = "recepcion" ]; then
+          if [ "${{ inputs.reemplazar_receptor }}" = "true" ]; then
             extra='-replace=huaweicloud_compute_instance.receptor[0]'
           fi
           terraform plan -var-file=terraform.tfvars -var "etapa=${{ inputs.etapa }}" $extra -out=tfplan

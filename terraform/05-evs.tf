@@ -14,7 +14,7 @@ resource "huaweicloud_evs_volume" "disco" {
 }
 
 resource "huaweicloud_compute_volume_attach" "receptor" {
-  for_each = local.receptor_enabled ? huaweicloud_evs_volume.disco : {}
+  for_each = local.evs_en_receptor ? huaweicloud_evs_volume.disco : {}
 
   instance_id = huaweicloud_compute_instance.receptor[0].id
   volume_id   = each.value.id
