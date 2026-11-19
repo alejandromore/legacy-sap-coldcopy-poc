@@ -188,6 +188,20 @@ def svmdk_a_dispositivo(src, dev):
         os.fsync(out.fileno())
 
 
+def limpiar(dev, nbytes):
+    """Pone en cero los primeros nbytes: los grains ausentes del VMDK son
+    ceros y un disco reutilizado (creado desde imagen) no los tiene."""
+    t0, cero, restante = time.time(), bytes(CHUNK), nbytes
+    with open(dev, "r+b") as f:
+        while restante > 0:
+            n = min(CHUNK, restante)
+            f.write(cero[:n])
+            restante -= n
+        f.flush()
+        os.fsync(f.fileno())
+    return time.time() - t0
+
+
 def escribir(src, dev):
     t0 = time.time()
     if shutil.which("qemu-img"):
@@ -224,6 +238,8 @@ def procesar(key):
         r["sha256_archivo"], r["bytes_archivo"], r["seg_descarga"] = descargar(d["objeto"], local)
         r["archivo_ok"] = r["sha256_archivo"] == d["sha256_archivo"]
         r["dispositivo"] = dev = dispositivo(d["evs_id"])
+        if d.get("limpiar"):
+            r["seg_limpieza"] = limpiar(dev, d["bytes_virtuales"])
         r["metodo"], r["seg_escritura"] = escribir(local, dev)
         r["sha256_destino"], r["seg_hash"] = hash_dispositivo(dev, d["bytes_virtuales"])
         r["sha256_origen"] = d["sha256_crudo"]
