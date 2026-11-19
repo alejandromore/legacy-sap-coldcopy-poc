@@ -205,6 +205,26 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 4. Verificar: arranque, LVM, montajes, **misma IP**, `ping` y SSH desde el receptor (simula el acceso de Integratel), y SHA-256 de los archivos de prueba contra la lista de la Fase 1.
 5. Opcional: copia CBR del ECS final y restauración de prueba.
 
+### Estado de las Fases 4 a 6 — variante A (2026-11-19)
+
+**Completas.** Acta: [`evidencia/acta-A.md`](evidencia/acta-A.md).
+
+- SHA-256 origen = destino en los 2 discos.
+- RHEL 5.1 arranca en el ECS con VirtIO, conserva la IP `192.168.63.50` y los 18 archivos de prueba dan OK.
+
+Ajustes que salieron de la prueba y ya están en el código:
+
+1. **Disco de sistema desde imagen.** Huawei no acepta como disco de sistema un EVS creado vacío. El disco de sistema tiene que ser un EVS creado desde una imagen, sobre el que el receptor escribe tras ponerlo en cero (opción `limpiar` del manifiesto). En esta corrida se reutilizó el disco de sistema original del ECS final. Pendiente: que Terraform cree el EVS `sistema` con `image_id`.
+2. **Nombres de dispositivo.** En KVM los discos se conectan como `/dev/vda` y `/dev/vdb` ([`scripts/huawei/armar-final.py`](scripts/huawei/armar-final.py)).
+3. **Permisos de la agencia.** Necesitó `OBS OperateAccess`, porque el rol personalizado acotado al bucket no tuvo efecto. Pendiente acotarlo.
+4. **Receptor sin Internet.** Sin `qemu-img`, usa un agente en Python con biblioteca estándar ([`scripts/receptor/coldcopy-receptor.py`](scripts/receptor/coldcopy-receptor.py)) que:
+   - lee OBS con las credenciales de la agencia;
+   - escribe los EVS con su propio conversor de VMDK;
+   - publica los resultados;
+   - verifica el ECS final por SSH.
+5. **Diagnóstico sin SSH.** La consola serie del ECS (API `os-getConsoleOutput`) es la única ventana; ahí escriben el agente y el kernel del RHEL.
+6. **Credencial de subida.** La credencial temporal reducida dejó de ser válida antes de su vencimiento. Se volvió a emitir sin problemas.
+
 ### Fase 7 — Acta de validación
 - `evidencia/acta-<variante>.md`, con la misma estructura que el acta del diagrama:
   - SHA-256 origen = SHA-256 destino, por disco.

@@ -1,0 +1,209 @@
+3c3
+< 2026-11-19T02:36:18Z
+---
+> 2026-11-19T09:07:46Z
+9c9
+< Linux rhel51-origen 2.6.18-53.el5 #1 SMP Wed Oct 10 16:34:19 EDT 2007 x86_64 x86_64 x86_64 GNU/Linux
+---
+> Linux rhel51-origen 2.6.18-419.el5 #1 SMP Fri Feb 24 22:47:42 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+15a16
+> kernel-2.6.18-419.el5
+25,26c26,27
+< 408
+< 968f11a426cba287b1550b560c9a84101b729d2fd4cad9bca167b768f97a577b
+---
+> 410
+> 3d47158ecc3c0f457b5b71715341c7219ecd7aa824c7e686344d3d5cba0ea8c2
+30,31c31,32
+< Disk /dev/sda: 12.8 GB, 12884901888 bytes
+< 255 heads, 63 sectors/track, 1566 cylinders
+---
+> Disk /dev/vda: 42.9 GB, 42949672960 bytes
+> 255 heads, 63 sectors/track, 5221 cylinders
+35,36c36,37
+< /dev/sda1   *           1          13      104391   83  Linux
+< /dev/sda2              14        1566    12474472+  8e  Linux LVM
+---
+> /dev/vda1   *           1          13      104391   83  Linux
+> /dev/vda2              14        1566    12474472+  8e  Linux LVM
+38,39c39,40
+< Disk /dev/sdb: 4294 MB, 4294967296 bytes
+< 255 heads, 63 sectors/track, 522 cylinders
+---
+> Disk /dev/vdb: 10.7 GB, 10737418240 bytes
+> 255 heads, 63 sectors/track, 1305 cylinders
+43c44
+< /dev/sdb1   *           1         522     4192933+  8e  Linux LVM
+---
+> /dev/vdb1   *           1         522     4192933+  8e  Linux LVM
+46,47d46
+<   /dev/hdc: open failed: No medium found
+<   /dev/hdd: open failed: No medium found
+49,50c48,49
+<   /dev/sda2  VolGroup00    lvm2 a-   11.88G    0 
+<   /dev/sdb1  VolGroupDatos lvm2 a-    3.97G    0 
+---
+>   /dev/vda2  VolGroup00    lvm2 a-   11.88G    0 
+>   /dev/vdb1  VolGroupDatos lvm2 a-    3.97G    0 
+53,54d51
+<   /dev/hdc: open failed: No medium found
+<   /dev/hdd: open failed: No medium found
+60,61d56
+<   /dev/hdc: open failed: No medium found
+<   /dev/hdd: open failed: No medium found
+69c64
+< /dev/mapper/VolGroup00-LogVol00   11G 1007M  9.1G  10% /
+---
+> /dev/mapper/VolGroup00-LogVol00   11G  1.2G  8.9G  12% /
+71c66
+< /dev/sda1              99M   12M   82M  13% /boot
+---
+> /dev/vda1              99M   19M   76M  20% /boot
+96a92,95
+> title RHEL 5.1 - kernel 2.6.18-419.el5 VirtIO (Huawei Cloud)
+> 	root (hd0,0)
+> 	kernel /vmlinuz-2.6.18-419.el5 ro root=/dev/VolGroup00/LogVol00 console=ttyS0,115200 console=tty0 clocksource=acpi_pm
+> 	initrd /initrd-2.6.18-419.el5.img
+103c102,103
+< total 6243
+---
+> total 12991
+> -rw-r--r-- 1 root root 1284824 Feb 24  2017 System.map-2.6.18-419.el5
+104a105
+> -rw-r--r-- 1 root root   67854 Feb 24  2017 config-2.6.18-419.el5
+106c107,108
+< drwxr-xr-x 2 root root    1024 Nov 18 21:05 grub
+---
+> drwxr-xr-x 2 root root    1024 Nov 18 21:51 grub
+> -rw------- 1 root root 3274406 Nov 18 21:41 initrd-2.6.18-419.el5.img
+108a111
+> -rw-r--r-- 1 root root  118906 Feb 24  2017 symvers-2.6.18-419.el5.gz
+109a113
+> -rw-r--r-- 1 root root 2127884 Feb 24  2017 vmlinuz-2.6.18-419.el5
+114,118c118,124
+< ipv6                  411425  12 
+< autofs4                57161  2 
+< hidp                   83649  2 
+< rfcomm                104809  0 
+< l2cap                  89409  10 hidp,rfcomm
+---
+> ipv6                  438625  14 
+> xfrm_nalgo             43333  1 ipv6
+> crypto_api             42945  1 xfrm_nalgo
+> autofs4                62409  2 
+> hidp                   83521  2 
+> rfcomm                104681  0 
+> l2cap                  89537  10 hidp,rfcomm
+120,122c126,131
+< sunrpc                197513  1 
+< dm_multipath           52433  0 
+< video                  51273  0 
+---
+> sunrpc                203529  1 
+> dm_multipath           58969  0 
+> scsi_dh                42561  1 dm_multipath
+> joydev                 43969  0 
+> video                  53197  0 
+> backlight              39873  1 video
+124c133,134
+< backlight              39873  0 
+---
+> power_meter            47053  0 
+> hwmon                  36553  1 power_meter
+126c136,137
+< i2c_core               56129  1 i2c_ec
+---
+> dell_wmi               37601  0 
+> wmi                    41985  1 dell_wmi
+130c141
+< acpi_memhotplug        40133  0 
+---
+> acpi_memhotplug        40517  0 
+132c143
+< parport_pc             62313  0 
+---
+> parport_pc             62953  0 
+135,136c146,147
+< sg                     69865  0 
+< e1000                 160465  0 
+---
+> floppy                 95465  0 
+> i2c_piix4              43725  0 
+138,140c149
+< shpchp                 70765  0 
+< ide_cd                 73697  0 
+< cdrom                  68713  1 ide_cd
+---
+> virtio_net             48705  0 
+142c151,161
+< dm_snapshot            50185  0 
+---
+> i2c_core               57537  2 i2c_ec,i2c_piix4
+> virtio_balloon         41025  0 
+> shpchp                 70893  0 
+> tpm_tis                48077  0 
+> tpm                    50273  1 tpm_tis
+> tpm_bios               40897  1 tpm
+> virtio_blk             43985  5 
+> virtio_pci             43593  0 
+> virtio_ring            37953  1 virtio_pci
+> virtio                 39365  4 virtio_net,virtio_balloon,virtio_blk,virtio_pci
+> dm_snapshot            52233  0 
+144,150c163,170
+< dm_mirror              59977  0 
+< dm_mod                 95761  11 dm_multipath,dm_snapshot,dm_zero,dm_mirror
+< ata_piix               49861  0 
+< libata                160849  1 ata_piix
+< mptspi                 52305  3 
+< mptscsih               56513  1 mptspi
+< mptbase                92641  2 mptspi,mptscsih
+---
+> dm_mirror              55377  0 
+> dm_log                 44993  1 dm_mirror
+> dm_mod                103313  12 dm_multipath,dm_snapshot,dm_zero,dm_mirror,dm_log
+> ata_piix               57285  0 
+> libata                210769  1 ata_piix
+> mptspi                 54865  0 
+> mptscsih               71360  1 mptspi
+> mptbase               125125  2 mptspi,mptscsih
+152,157c172,177
+< sd_mod                 56257  5 
+< scsi_mod              186361  6 sg,libata,mptspi,mptscsih,scsi_transport_spi,sd_mod
+< ext3                  166993  3 
+< jbd                    93873  1 ext3
+< ehci_hcd               65229  0 
+< ohci_hcd               54493  0 
+---
+> sd_mod                 56513  0 
+> scsi_mod              202201  6 scsi_dh,libata,mptspi,mptscsih,scsi_transport_spi,sd_mod
+> ext3                  170065  3 
+> jbd                    95665  1 ext3
+> ehci_hcd               66765  0 
+> ohci_hcd               56181  0 
+177d196
+< HWADDR=00:0C:29:02:E2:37
+183c202
+< eth0      Link encap:Ethernet  HWaddr 00:0C:29:02:E2:37  
+---
+> eth0      Link encap:Ethernet  HWaddr FA:16:3E:10:A7:9A  
+185c204
+<           inet6 addr: fe80::20c:29ff:fe02:e237/64 Scope:Link
+---
+>           inet6 addr: fe80::f816:3eff:fe10:a79a/64 Scope:Link
+187,188c206,207
+<           RX packets:105 errors:0 dropped:0 overruns:0 frame:0
+<           TX packets:81 errors:0 dropped:0 overruns:0 carrier:0
+---
+>           RX packets:86 errors:0 dropped:0 overruns:0 frame:0
+>           TX packets:76 errors:0 dropped:0 overruns:0 carrier:0
+190,191c209
+<           RX bytes:22025 (21.5 KiB)  TX bytes:13303 (12.9 KiB)
+<           Base address:0x2000 Memory:fd5c0000-fd5e0000 
+---
+>           RX bytes:11033 (10.7 KiB)  TX bytes:17138 (16.7 KiB)
+244c262
+< kudzu          	0:off	1:off	2:off	3:on	4:on	5:on	6:off
+---
+> kudzu          	0:off	1:off	2:off	3:off	4:off	5:off	6:off
+293a312
+>     types = [ "virtblk", 16 ]

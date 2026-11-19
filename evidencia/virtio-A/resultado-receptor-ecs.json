@@ -1,0 +1,25 @@
+{
+  "variante": "virtio-A-ecs",
+  "inicio": "2026-11-19T04:00:45Z",
+  "discos": [
+    {
+      "nombre": "sistema",
+      "objeto": "incoming/virtio-A/rhel51-origen-disk1.vmdk",
+      "evs_id": "cba603c8-cdbd-4324-ba2c-c236b604a594",
+      "sha256_archivo": "aa44053423840351b758c3a0f3f8a55f0ecc015cccba9bcc5bd716160e51afb8",
+      "bytes_archivo": 466990080,
+      "seg_descarga": 5.763279914855957,
+      "archivo_ok": true,
+      "dispositivo": "/dev/vdb",
+      "seg_limpieza": 49.6504442691803,
+      "metodo": "conversor-python",
+      "seg_escritura": 6.993189811706543,
+      "sha256_destino": "a1e6e6f00278e89cdcbd75744cb00b6b8b2d635e8fd3e4ab0fd56f86cf0dc94b",
+      "seg_hash": 62.42482900619507,
+      "sha256_origen": "a1e6e6f00278e89cdcbd75744cb00b6b8b2d635e8fd3e4ab0fd56f86cf0dc94b",
+      "contenido_ok": true
+    }
+  ],
+  "fin": "2026-11-19T04:02:50Z",
+  "todo_ok": true
+}

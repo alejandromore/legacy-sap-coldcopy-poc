@@ -1,0 +1,15 @@
+{
+  "variante": "virtio-A-ecs",
+  "nota": "Disco de sistema escrito sobre el disco de sistema original del ECS final (creado desde imagen): Huawei no acepta un EVS de datos como disco de sistema.",
+  "discos": [
+    {
+      "nombre": "sistema",
+      "objeto": "incoming/virtio-A/rhel51-origen-disk1.vmdk",
+      "sha256_archivo": "aa44053423840351b758c3a0f3f8a55f0ecc015cccba9bcc5bd716160e51afb8",
+      "sha256_crudo": "a1e6e6f00278e89cdcbd75744cb00b6b8b2d635e8fd3e4ab0fd56f86cf0dc94b",
+      "bytes_virtuales": 12884901888,
+      "evs_id": "cba603c8-cdbd-4324-ba2c-c236b604a594",
+      "limpiar": true
+    }
+  ]
+}
