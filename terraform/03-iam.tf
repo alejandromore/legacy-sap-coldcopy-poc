@@ -39,5 +39,7 @@ resource "huaweicloud_identity_agency" "receptor" {
   name                   = local.agency_name
   description            = "Receptor coldcopy: acceso a su bucket OBS"
   delegated_service_name = "op_svc_ecs"
-  domain_roles           = [huaweicloud_identity_role.receptor_obs.name]
+  # "Todos los recursos": con solo domain_roles (servicios globales) OBS
+  # respondió AccessDenied a las credenciales temporales del metadata service.
+  all_resources_roles = [huaweicloud_identity_role.receptor_obs.name]
 }
