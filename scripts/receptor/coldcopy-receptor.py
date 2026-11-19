@@ -218,6 +218,7 @@ def main():
         estado["hechos"] = sorted(os.listdir(STATE))
     except Exception:
         estado["error"] = traceback.format_exc()
+        log(estado["error"])
     try:
         estado["log"] = open(LOG).read()[-4000:] if os.path.exists(LOG) else ""
         put_json("resultados/receptor/estado.json", estado)

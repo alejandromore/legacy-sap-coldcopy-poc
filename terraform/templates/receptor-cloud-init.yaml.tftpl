@@ -24,6 +24,9 @@ write_files:
       [Service]
       Type=oneshot
       ExecStart=/usr/bin/python3 /usr/local/bin/coldcopy-receptor.py
+      # Sin EIP ni SSH: la consola serie (API de ECS) es la única ventana.
+      StandardOutput=journal+console
+      StandardError=journal+console
   - path: /etc/systemd/system/coldcopy-receptor.timer
     permissions: "0644"
     content: |
