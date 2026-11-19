@@ -111,8 +111,8 @@ Y además **medir la velocidad real** de cada tramo (subida a OBS y escritura en
 | # | Prerrequisito | Responsable | Estado |
 |---|---|---|---|
 | P1 | VMware Workstation Pro instalado | Alejandro | Listo (2026-11-18) |
-| P2 | ISO oficial RHEL 5.1 x86_64 (Binary DVD, SHA-256 publicado por Red Hat) | Claude, con la cuenta de Alejandro | En descarga (2026-11-18). No hay VM del cliente: se instala `rhel51-origen` desde cero |
-| P3 | `rhel51-origen` reducida: disco de sistema + disco LVM pequeño, sin datos productivos | Claude | Discos creados (12 GB + 4 GB). Pendiente reinstalar con RHEL 5.1 oficial |
+| P2 | ISO oficial RHEL 5.1 x86_64 (Binary DVD, SHA-256 publicado por Red Hat) | Claude, con la cuenta de Alejandro | Listo (2026-11-18): `rhel-5.1-server-x86_64-dvd.iso`, SHA-256 verificado |
+| P3 | `rhel51-origen` reducida: disco de sistema + disco LVM pequeño, sin datos productivos | Claude | Listo (2026-11-18): RHEL 5.1 instalado, IP `192.168.63.50`, snapshot `base` |
 | P4 | `aux-copia` con Rocky Linux 9.9 | Claude | Listo (2026-11-18). Falta instalar `qemu-img` |
 | P5 | AK/SK de administrador **solo para el bootstrap OIDC** (una vez, en local, variables de entorno). Después GitHub se federa por OIDC y no guarda ninguna AK/SK | Alejandro | Listo (2026-11-18): bootstrap aplicado |
 | P6 | Cuota en `la-south-2` para 2 ECS, 4 EVS, 1 bucket OBS, 1 agencia IAM (no se necesita EIP). Bucket de estados `obs-terraform-tfstate` existente (compartido con `nextcloud-huawei`) | Alejandro | Pendiente |
@@ -163,8 +163,8 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 ### Fase 0 — Repositorio y entorno
 - Estructura del repositorio y `.gitignore` (excluir `*.tfstate`, `*.vmdk`, `*.ovf`, `*.iso`, llaves y `terraform.tfvars`). **Listo.**
 - VMware Workstation (P1), `aux-copia` (P4). **Listo.**
-- Instalar `rhel51-origen` con RHEL 5.1 oficial (P2, P3) y fijar su IP (`192.168.63.50`).
-- **Snapshot base** de `rhel51-origen`.
+- Instalar `rhel51-origen` con RHEL 5.1 oficial (P2, P3) y fijar su IP (`192.168.63.50`). **Listo**: `redhat-release-5Server-5.1.0.2`, kernel `2.6.18-53.el5`, 408 paquetes, `VolGroup00` (sistema) y `VolGroupDatos` (`/datos`), SSH solo con llave RSA.
+- **Snapshot base** de `rhel51-origen`. **Listo** (snapshot `base`, ISOs desconectadas).
 
 ### Fase 1 — Línea base del origen ("antes")
 - Script `scripts/origen/inventario.sh` (compatible con bash 3.2 de RHEL 5): `uname -a`, `fdisk -l`, `pvs`/`vgs`/`lvs`, `df -h`, `fstab`, `grub.conf`, `lsmod`, `ifcfg-*`.
