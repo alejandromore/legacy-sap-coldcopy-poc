@@ -170,9 +170,10 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 - Script `scripts/origen/inventario.sh` (compatible con bash 3.2 de RHEL 5): `uname -a`, `fdisk -l`, `pvs`/`vgs`/`lvs`, `df -h`, `fstab`, `grub.conf`, `lsmod`, `ifcfg-*`.
 - Generar archivos de prueba en el disco LVM de datos con su lista de SHA-256 (sustituye a los conteos de tablas y reportes SAP).
 - Guardar todo en `evidencia/antes/`.
+- **Estado (2026-11-18): listo.** [`generar-datos-prueba.sh`](scripts/origen/generar-datos-prueba.sh) creó 18 archivos (1.1 GB: 13 binarios aleatorios y 5 "tablas" CSV con conteos conocidos) en `/datos/prueba` con su manifiesto `SHA256SUMS`. [`inventario.sh`](scripts/origen/inventario.sh) quedó en [`evidencia/antes/inventario.txt`](evidencia/antes/inventario.txt) (408 paquetes, 18 archivos OK). Snapshot `linea-base` tomado con la VM apagada: es el punto de partida de las dos variantes VirtIO.
 
 ### Fase 2 — Variantes VirtIO
-- Variante A sobre snapshot `virtio-A`; variante B sobre snapshot `virtio-B` (§5).
+- Variante A sobre snapshot `virtio-A`; variante B sobre snapshot `virtio-B` (§5), ambas partiendo de `linea-base`.
 - En cada una: comprobar que **sigue arrancando en VMware** con la entrada original.
 
 ### Fase 3 — Construcción del ambiente Huawei (ver §7)
