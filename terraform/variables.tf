@@ -10,6 +10,17 @@ variable "enterprise_project_id" {
   description = "Enterprise Project. 0 = default"
 }
 
+variable "domain_id" {
+  type        = string
+  description = "ID de la cuenta de Huawei Cloud (principal de la política del bucket). En GitHub: variable HW_DOMAIN_ID"
+}
+
+variable "receptor_obs_operate_access" {
+  type        = bool
+  default     = false
+  description = "Agrega OBS OperateAccess (todos los buckets) a la agencia del receptor si la política del bucket no alcanzara"
+}
+
 variable "app_env" {
   type        = string
   default     = "legacy-coldcopy"

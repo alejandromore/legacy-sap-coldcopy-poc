@@ -53,23 +53,32 @@ resource "terraform_data" "receptor_user_data" {
 # la Fase 6 se reemplaza por el EVS del disco de sistema de origen. Conserva
 # la IP privada del origen.
 resource "huaweicloud_compute_instance" "final" {
-  name                        = local.final_name
-  image_id                    = data.huaweicloud_images_image.rocky.id
-  flavor_id                   = data.huaweicloud_compute_flavors.final.ids[0]
-  availability_zone           = local.az
-  security_group_ids          = [huaweicloud_networking_secgroup.lab.id]
-  admin_pass                  = random_password.consola.result
-  system_disk_type            = var.evs_type
-  system_disk_size            = 40
-  delete_disks_on_termination = false
-  power_action                = "OFF"
-  enterprise_project_id       = var.enterprise_project_id
-  tags                        = merge(local.tags, { rol = "sap-final" })
+  name                  = local.final_name
+  image_id              = data.huaweicloud_images_image.rocky.id
+  flavor_id             = data.huaweicloud_compute_flavors.final.ids[0]
+  availability_zone     = local.az
+  security_group_ids    = [huaweicloud_networking_secgroup.lab.id]
+  admin_pass            = random_password.consola.result
+  system_disk_type      = var.evs_type
+  system_disk_size      = 40
+  power_action          = "OFF"
+  enterprise_project_id = var.enterprise_project_id
+  tags                  = merge(local.tags, { rol = "sap-final" })
+
+  # Destroy seguro: al borrar el ECS final se borran los discos que tenga
+  # conectados en ese momento, incluido uno que Terraform no conozca (el disco
+  # de sistema provisorio si armar-final no llegó a borrarlo). Los EVS del
+  # estado que ya no existan se dan por borrados.
+  delete_disks_on_termination = true
 
   network {
     uuid        = huaweicloud_vpc_subnet.lab.id
     fixed_ip_v4 = var.ip_origen
   }
+
+  # El ECS final se destruye ANTES que los EVS: así no se intenta borrar un
+  # EVS mientras sigue conectado a él.
+  depends_on = [huaweicloud_evs_volume.disco]
 
   # El disco de sistema y el encendido los cambia la Fase 6 fuera de Terraform.
   lifecycle {

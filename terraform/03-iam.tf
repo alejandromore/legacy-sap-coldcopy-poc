@@ -39,10 +39,14 @@ resource "huaweicloud_identity_agency" "receptor" {
   name                   = local.agency_name
   description            = "Receptor coldcopy: acceso a su bucket OBS"
   delegated_service_name = "op_svc_ecs"
-  # Con solo el rol personalizado (en servicios globales o en todos los
-  # recursos) OBS respondió AccessDenied a las credenciales temporales del
-  # metadata service; con OBS OperateAccess funciona. Es más amplio que lo
-  # necesario (todos los buckets de la cuenta): pendiente acotarlo con una
-  # política de bucket. El rol personalizado queda para documentar la intención.
-  all_resources_roles = [huaweicloud_identity_role.receptor_obs.name, "OBS OperateAccess"]
+  # Con solo este rol personalizado, OBS respondió AccessDenied a las
+  # credenciales temporales del metadata service (en servicios globales y en
+  # todos los recursos). El acceso efectivo lo da la política del bucket
+  # (02-obs.tf), que nombra a esta agencia y solo cubre este bucket. Si
+  # var.receptor_obs_operate_access = true se agrega OBS OperateAccess (todos
+  # los buckets de la cuenta), que fue lo que funcionó en la variante A.
+  all_resources_roles = concat(
+    [huaweicloud_identity_role.receptor_obs.name],
+    var.receptor_obs_operate_access ? ["OBS OperateAccess"] : []
+  )
 }

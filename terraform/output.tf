@@ -15,7 +15,7 @@ output "final_private_ip" {
 }
 
 output "evs" {
-  value = { for k, v in huaweicloud_evs_volume.disco : k => { id = v.id, size = v.size } }
+  value = { for k, v in huaweicloud_evs_volume.disco : k => { id = v.id, size = v.size, orden = tonumber(v.tags["orden"]) } }
 }
 
 output "consola_password" {
@@ -25,4 +25,8 @@ output "consola_password" {
 
 output "etapa" {
   value = var.etapa
+}
+
+output "final_name" {
+  value = huaweicloud_compute_instance.final.name
 }

@@ -16,6 +16,35 @@ resource "huaweicloud_obs_bucket" "vmdk" {
   enterprise_project_id = var.enterprise_project_id
   tags                  = local.tags
 
+  # Política del bucket (formato OBS): la agencia del receptor lee incoming/
+  # y escribe resultados/. No da acceso a ningún otro bucket.
+  policy_format = "obs"
+  policy = jsonencode({
+    Statement = [
+      {
+        Sid       = "receptor-lee-y-lista"
+        Effect    = "Allow"
+        Principal = { ID = ["domain/${var.domain_id}:agency/${local.agency_name}"] }
+        Action    = ["ListBucket", "HeadBucket", "GetBucketLocation"]
+        Resource  = [var.obs_bucket_name]
+      },
+      {
+        Sid       = "receptor-lee-incoming"
+        Effect    = "Allow"
+        Principal = { ID = ["domain/${var.domain_id}:agency/${local.agency_name}"] }
+        Action    = ["GetObject"]
+        Resource  = ["${var.obs_bucket_name}/incoming/*"]
+      },
+      {
+        Sid       = "receptor-escribe-resultados"
+        Effect    = "Allow"
+        Principal = { ID = ["domain/${var.domain_id}:agency/${local.agency_name}"] }
+        Action    = ["PutObject", "AbortMultipartUpload", "ListMultipartUploadParts"]
+        Resource  = ["${var.obs_bucket_name}/resultados/*"]
+      },
+    ]
+  })
+
   lifecycle_rule {
     name    = "abortar-multipart"
     enabled = true

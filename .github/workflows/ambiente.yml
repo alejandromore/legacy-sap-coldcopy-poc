@@ -8,11 +8,14 @@
 # Variables del environment huawei-lab (Settings > Environments):
 #   HW_IDP_ID       ID del proveedor de identidad (output idp_id del bootstrap)
 #   HW_DOMAIN_NAME  nombre de la cuenta de Huawei Cloud
+#   HW_DOMAIN_ID    ID de la cuenta (principal de la política del bucket)
 #
 # Acciones:
 #   plan     muestra los cambios, no aplica nada
 #   deploy   construye o actualiza el ambiente (etapa recepcion o final)
-#   destroy  destruye todo (el bucket OBS se vacía solo: force_destroy)
+#   destroy      destruye todo (el bucket OBS se vacía solo: force_destroy)
+#   armar-final  Fase 6: conecta los EVS al ECS SAP final (el de orden 0 como
+#                disco de sistema), borra el disco provisorio y lo enciende
 # ============================================================================
 name: ambiente
 
@@ -22,7 +25,7 @@ on:
       action:
         description: Acción sobre el ambiente
         type: choice
-        options: [plan, deploy, destroy]
+        options: [plan, deploy, destroy, armar-final]
         default: plan
       etapa:
         description: "recepcion: receptor con los EVS. final: EVS libres para el ECS SAP final; el receptor queda para verificar"
@@ -51,6 +54,7 @@ env:
   # OBS rechaza los checksums que el backend s3 agrega desde Terraform 1.11.
   AWS_REQUEST_CHECKSUM_CALCULATION: when_required
   AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+  TF_VAR_domain_id: ${{ vars.HW_DOMAIN_ID }}
 
 jobs:
   terraform:
@@ -82,7 +86,7 @@ jobs:
         run: terraform validate
 
       - name: terraform plan
-        if: inputs.action != 'destroy'
+        if: inputs.action == 'plan' || inputs.action == 'deploy'
         run: |
           extra=""
           if [ "${{ inputs.reemplazar_receptor }}" = "true" ]; then
@@ -109,6 +113,18 @@ jobs:
             exit 1
           fi
           echo "Estado vacío: ambiente destruido" >> "$GITHUB_STEP_SUMMARY"
+
+      # Fase 6. Requiere haber corrido deploy con etapa=final (EVS libres) y que
+      # el receptor haya publicado resultado.json con contenido_ok.
+      - name: Armar el ECS SAP final
+        if: inputs.action == 'armar-final'
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/sdk"
+          "$RUNNER_TEMP/sdk/bin/pip" install --quiet huaweicloudsdkecs huaweicloudsdkevs
+          ids=$(terraform output -json evs | jq -r 'to_entries | sort_by(.value.orden) | map(.value.id) | join(" ")')
+          echo "EVS en orden: ${ids}"
+          "$RUNNER_TEMP/sdk/bin/python" "$GITHUB_WORKSPACE/scripts/huawei/armar-final.py"             "$(terraform output -raw final_name)" ${ids} | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Resumen
         if: inputs.action == 'deploy'
