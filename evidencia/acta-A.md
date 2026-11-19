@@ -66,10 +66,42 @@ El receptor entró por SSH al ECS final dentro de la VPC (simula el acceso de In
 - [x] Ningún ECS tuvo IP pública; el receptor leyó OBS por la red interna.
 - [x] LVM, montajes y red operativos en el ECS final, con la misma IP que en VMware.
 - [x] Los SHA-256 de los archivos de prueba coinciden con la línea base.
-- [ ] Vuelta atrás en VMware (Fase 8).
-- [ ] Estabilidad: 5 reinicios y escritura sostenida (criterio de elección, §5).
+- [x] Vuelta atrás en VMware (Fase 8): arranca con los dos kernels, 18 archivos OK.
+- [x] Estabilidad: 5 reinicios sin errores y escritura y lectura sostenida de 6 GiB a más de 220 MB/s, sin errores en dmesg.
 
-## 6. Tiempos medidos
+## 6. Estabilidad en el ECS
+
+El receptor ejecutó la prueba desde la VPC ([`virtio-A/estabilidad.txt`](virtio-A/estabilidad.txt)):
+
+| Prueba | Resultado |
+|---|---|
+| 5 reinicios seguidos | Los 5 volvieron por SSH en ≈ 50 s. Cada vez: kernel `2.6.18-419.el5`, IP 192.168.63.50, 3 montajes, 0 errores en dmesg |
+| Escritura sostenida `/` (`vda`, LVM) | 4 GiB a 264 MB/s (`conv=fsync`) |
+| Lectura sostenida `/` | 4 GiB a 255 MB/s (caché vaciada) |
+| Escritura sostenida `/datos` (`vdb`, LVM) | 2 GiB a 261 MB/s |
+| Lectura sostenida `/datos` | 2 GiB a 226 MB/s |
+| Datos de prueba después de todo | 18 OK |
+| dmesg (I/O error, EXT3-fs error, Call Trace, BUG, soft lockup, virtio) | ninguno |
+
+## 7. Vuelta atrás (Fase 8)
+
+El origen quedó apagado y sin tocar desde la exportación. Se encendió en VMware tal como quedó ([`virtio-A/vuelta-atras-kernel-419.txt`](virtio-A/vuelta-atras-kernel-419.txt)) y luego con la entrada original ([`virtio-A/vuelta-atras.txt`](virtio-A/vuelta-atras.txt)):
+
+| Arranque en VMware | Kernel | IP | Montajes | Errores en dmesg | Datos de prueba |
+|---|---|---|---|---|---|
+| Tal como quedó (entrada VirtIO predeterminada) | `2.6.18-419.el5` | 192.168.63.50 | 3 de 3 | 0 | — |
+| Entrada original (`default=1`) | `2.6.18-53.el5` | 192.168.63.50 | 3 de 3 | 0 | **18 OK** |
+
+Diferencias con la línea base ([`virtio-A/diff-antes-vuelta-atras.txt`](virtio-A/diff-antes-vuelta-atras.txt)). Son solo los cambios aprobados de la variante:
+
+- el paquete `kernel-2.6.18-419.el5` y su entrada de GRUB;
+- `virtblk` en `lvm.conf`;
+- `ifcfg-eth0` sin `HWADDR`;
+- `kudzu` desactivado.
+
+Para volver exactamente al estado previo a VirtIO se restaura el snapshot `linea-base` (en producción, la copia de respaldo del servidor antes del cambio aprobado).
+
+## 8. Tiempos medidos
 
 | Tramo | Volumen | Tiempo | Velocidad |
 |---|---|---|---|

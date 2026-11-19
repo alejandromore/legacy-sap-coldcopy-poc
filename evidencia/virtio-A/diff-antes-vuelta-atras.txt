@@ -1,0 +1,74 @@
+3c3
+< 2026-11-19T02:36:18Z
+---
+> 2026-11-19T04:15:43Z
+15a16
+> kernel-2.6.18-419.el5
+25,26c26,27
+< 408
+< 968f11a426cba287b1550b560c9a84101b729d2fd4cad9bca167b768f97a577b
+---
+> 410
+> 3d47158ecc3c0f457b5b71715341c7219ecd7aa824c7e686344d3d5cba0ea8c2
+69c70
+< /dev/mapper/VolGroup00-LogVol00   11G 1007M  9.1G  10% /
+---
+> /dev/mapper/VolGroup00-LogVol00   11G  1.2G  8.9G  12% /
+71c72
+< /dev/sda1              99M   12M   82M  13% /boot
+---
+> /dev/sda1              99M   19M   76M  20% /boot
+93c94
+< default=0
+---
+> default=1
+96a98,101
+> title RHEL 5.1 - kernel 2.6.18-419.el5 VirtIO (Huawei Cloud)
+> 	root (hd0,0)
+> 	kernel /vmlinuz-2.6.18-419.el5 ro root=/dev/VolGroup00/LogVol00 console=ttyS0,115200 console=tty0 clocksource=acpi_pm
+> 	initrd /initrd-2.6.18-419.el5.img
+103c108,109
+< total 6243
+---
+> total 12991
+> -rw-r--r-- 1 root root 1284824 Feb 24  2017 System.map-2.6.18-419.el5
+104a111
+> -rw-r--r-- 1 root root   67854 Feb 24  2017 config-2.6.18-419.el5
+106c113,114
+< drwxr-xr-x 2 root root    1024 Nov 18 21:05 grub
+---
+> drwxr-xr-x 2 root root    1024 Nov 18 23:14 grub
+> -rw------- 1 root root 3274406 Nov 18 21:41 initrd-2.6.18-419.el5.img
+108a117
+> -rw-r--r-- 1 root root  118906 Feb 24  2017 symvers-2.6.18-419.el5.gz
+109a119
+> -rw-r--r-- 1 root root 2127884 Feb 24  2017 vmlinuz-2.6.18-419.el5
+135,136d144
+< sg                     69865  0 
+< e1000                 160465  0 
+137a146
+> sg                     69865  0 
+138a148
+> e1000                 160465  0 
+140d149
+< cdrom                  68713  1 ide_cd
+141a151
+> cdrom                  68713  1 ide_cd
+177d186
+< HWADDR=00:0C:29:02:E2:37
+187,188c196,197
+<           RX packets:105 errors:0 dropped:0 overruns:0 frame:0
+<           TX packets:81 errors:0 dropped:0 overruns:0 carrier:0
+---
+>           RX packets:53 errors:0 dropped:0 overruns:0 frame:0
+>           TX packets:65 errors:0 dropped:0 overruns:0 carrier:0
+190c199
+<           RX bytes:22025 (21.5 KiB)  TX bytes:13303 (12.9 KiB)
+---
+>           RX bytes:12780 (12.4 KiB)  TX bytes:10247 (10.0 KiB)
+244c253
+< kudzu          	0:off	1:off	2:off	3:on	4:on	5:on	6:off
+---
+> kudzu          	0:off	1:off	2:off	3:off	4:off	5:off	6:off
+293a303
+>     types = [ "virtblk", 16 ]

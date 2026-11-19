@@ -234,6 +234,7 @@ Ajustes que salieron de la prueba y ya están en el código:
 
 ### Fase 8 — Vuelta atrás
 - Encender `rhel51-origen` en VMware con la entrada original y repetir el inventario: debe ser idéntico al de la Fase 1. El origen nunca se borra.
+- **Variante A (2026-11-19): lista.** El origen, apagado e intacto desde la exportación, arranca en VMware con la entrada VirtIO y con la original: IP, 3 montajes, 0 errores en dmesg y 18 archivos OK. Las diferencias con la línea base son solo los cambios aprobados de la variante; el snapshot `linea-base` devuelve el estado previo exacto ([acta-A §6](evidencia/acta-A.md)).
 
 ### Fase 9 — Medición y extrapolación
 - Con las velocidades medidas (GB/h) de subida a OBS, descarga y escritura en EVS, estimar la ventana de cada servidor real (6.5 TB, 4.5 TB, 1.75 TB, 500 GB), sumando exportación OVF y hashes.
