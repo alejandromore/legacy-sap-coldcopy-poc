@@ -14,6 +14,10 @@
 #      al ECS SAP final dentro de la VPC, corre el inventario y publica
 #      resultados/<variante>/inventario-despues.txt. Reintenta cada minuto
 #      hasta que el ECS final responda.
+#   6. Si existe incoming/<variante>/estabilidad.json, reinicia el ECS final N
+#      veces (esperando que vuelva por SSH), hace escritura y lectura
+#      sostenida con dd y revisa dmesg. Publica
+#      resultados/<variante>/estabilidad.txt.
 #
 # Credenciales: las temporales de la agencia del ECS, desde el metadata
 # service. Ninguna AK/SK vive en el disco.
@@ -103,23 +107,85 @@ def get_bytes(key):
     return obs("GET", key).read()
 
 
-def verificar(key):
-    var = key.split("/")[1]
-    cfg = json.loads(get_bytes(key))
+def ssh_cmd(llave, ip, timeout=10):
+    # OpenSSH 4.3 de RHEL 5: ssh-rsa (SHA-1) y grupo 14 SHA-1. Requiere la
+    # política de cifrado LEGACY en el receptor (cloud-init).
+    return ["ssh", "-i", llave, "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
+            "-o", "ConnectTimeout=%d" % timeout, "-o", "BatchMode=yes", "-o", "LogLevel=ERROR",
+            "-o", "HostKeyAlgorithms=+ssh-rsa", "-o", "PubkeyAcceptedAlgorithms=+ssh-rsa",
+            "-o", "KexAlgorithms=+diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1",
+            "root@" + ip]
+
+
+def ssh(llave, ip, comando, entrada=None, timeout=1800):
+    p = subprocess.run(ssh_cmd(llave, ip) + [comando], input=entrada, capture_output=True, timeout=timeout)
+    return p.returncode, p.stdout.decode(errors="replace"), p.stderr.decode(errors="replace")
+
+
+def bajar_llave(cfg, var):
     llave = os.path.join(STATE, "llave-" + var)
     with open(llave, "wb") as f:
         f.write(get_bytes(cfg["llave"]))
     os.chmod(llave, 0o600)
+    return llave
+
+
+ERRORES_DMESG = "I/O error|EXT3-fs error|Buffer I/O|Call Trace|BUG:|soft lockup|virtio.*(error|fail)|end_request"
+CHEQUEO = ("export LANG=C; echo \"kernel=$(uname -r) uptime=$(cut -d' ' -f1 /proc/uptime)s\"; "
+           "echo \"ip=$(/sbin/ifconfig eth0 | awk '/inet addr/ {sub(\"addr:\", \"\", $2); print $2}')\"; "
+           "echo \"montajes=$(mount | grep -cE ' (/|/boot|/datos) ')\"; "
+           "echo \"errores_dmesg=$(dmesg | grep -cE '%s')\"" % ERRORES_DMESG)
+
+
+def estabilidad(key):
+    var = key.split("/")[1]
+    cfg = json.loads(get_bytes(key))
+    llave, ip = bajar_llave(cfg, var), cfg["ip"]
+    salida = ["# Estabilidad %s en %s" % (var, ip)]
+    for i in range(1, int(cfg.get("reinicios", 5)) + 1):
+        rc, out, err = ssh(llave, ip, CHEQUEO)
+        if rc != 0:
+            raise RuntimeError("Antes del reinicio %d el ECS final no responde: %s" % (i, err))
+        salida.append("antes del reinicio %d: %s" % (i, " ".join(out.split())))
+        ssh(llave, ip, "nohup sh -c 'sleep 2; /sbin/reboot' >/dev/null 2>&1 &", timeout=30)
+        t0 = time.time()
+        time.sleep(30)
+        while ssh(llave, ip, "true", timeout=30)[0] != 0:
+            if time.time() - t0 > 900:
+                raise RuntimeError("El ECS final no volvió después del reinicio %d" % i)
+            time.sleep(10)
+        salida.append("reinicio %d: SSH de vuelta en %.0f s" % (i, time.time() - t0))
+        log("Estabilidad %s: reinicio %d listo" % (var, i))
+    mb = int(cfg.get("dd_mb", 4096))
+    prueba = (
+        "export LANG=C; set -e; "
+        "for d in /root /datos; do "
+        " mb=%d; [ $d = /datos ] && mb=$((mb / 2)); "
+        " echo \"== $d: escritura de $mb MB\"; "
+        " dd if=/dev/zero of=$d/dd-prueba.bin bs=1M count=$mb conv=fsync 2>&1 | tail -1; "
+        " sync; echo 3 > /proc/sys/vm/drop_caches; "
+        " echo \"== $d: lectura\"; dd if=$d/dd-prueba.bin of=/dev/null bs=1M 2>&1 | tail -1; "
+        " rm -f $d/dd-prueba.bin; "
+        "done; "
+        "echo \"== datos de prueba\"; cd /datos/prueba && sha256sum -c SHA256SUMS | grep -c ': OK$'; "
+        "echo \"== dmesg (patrones de error)\"; dmesg | grep -E '%s' || echo ninguno" % (mb, ERRORES_DMESG))
+    rc, out, err = ssh(llave, ip, prueba)
+    salida += ["", "# Escritura y lectura sostenida (dd)", out.strip(), err.strip()]
+    rc2, out2, _ = ssh(llave, ip, CHEQUEO)
+    salida += ["", "final: " + " ".join(out2.split())]
+    put_text("resultados/%s/estabilidad.txt" % var, "\n".join(salida) + "\n")
+    open(os.path.join(STATE, var + ".estabilidad"), "w").write("ok")
+    os.remove(llave)
+    log("Estabilidad %s publicada" % var)
+
+
+def verificar(key):
+    var = key.split("/")[1]
+    cfg = json.loads(get_bytes(key))
+    llave = bajar_llave(cfg, var)
     script = get_bytes(cfg["inventario"])
-    # OpenSSH 4.3 de RHEL 5: ssh-rsa (SHA-1) y grupo 14 SHA-1. Requiere la
-    # política de cifrado LEGACY en el receptor (cloud-init).
-    cmd = ["ssh", "-i", llave, "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
-           "-o", "ConnectTimeout=10", "-o", "BatchMode=yes",
-           "-o", "HostKeyAlgorithms=+ssh-rsa", "-o", "PubkeyAcceptedAlgorithms=+ssh-rsa",
-           "-o", "KexAlgorithms=+diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1",
-           "root@" + cfg["ip"], "bash -s"]
     t0 = time.time()
-    p = subprocess.run(cmd, input=script, capture_output=True, timeout=900)
+    p = subprocess.run(ssh_cmd(llave, cfg["ip"]) + ["bash -s"], input=script, capture_output=True, timeout=900)
     if p.returncode != 0:
         log("Verificación %s: el ECS final aún no responde (%s)" % (var, p.stderr.decode(errors="replace").strip()[-200:]))
         return
@@ -274,6 +340,17 @@ def main():
         # Un receptor recreado no tiene marcas locales: lo ya publicado en
         # resultados/ cuenta como hecho y no se vuelve a escribir en los EVS.
         publicados = set(listar("resultados/"))
+        for key in claves:
+            if key.endswith("/estabilidad.json"):
+                var = key.split("/")[1]
+                if not os.path.exists(os.path.join(STATE, var + ".estabilidad")):
+                    try:
+                        estabilidad(key)
+                    except Exception:
+                        err = traceback.format_exc()
+                        log(err)
+                        put_text("resultados/%s/estabilidad-error.txt" % var, err)
+                        open(os.path.join(STATE, var + ".estabilidad"), "w").write("error")
         for key in claves:
             if key.endswith("/manifiesto.json"):
                 var = key.split("/")[1]
