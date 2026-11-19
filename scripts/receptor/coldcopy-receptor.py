@@ -26,6 +26,7 @@ import subprocess
 import sys
 import time
 import traceback
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -67,7 +68,10 @@ def obs(method, key="", query="", body=None, ctype=""):
     headers = {"Date": date, "Authorization": "OBS %s:%s" % (ak, sig), "x-obs-security-token": tok}
     if ctype:
         headers["Content-Type"] = ctype
-    return urllib.request.urlopen(urllib.request.Request(url, data=body, method=method, headers=headers), timeout=120)
+    try:
+        return urllib.request.urlopen(urllib.request.Request(url, data=body, method=method, headers=headers), timeout=120)
+    except urllib.error.HTTPError as e:
+        raise RuntimeError("OBS %s %s -> HTTP %s: %s" % (method, key or "/", e.code, e.read()[:600].decode(errors="replace")))
 
 
 def put_json(key, data):
