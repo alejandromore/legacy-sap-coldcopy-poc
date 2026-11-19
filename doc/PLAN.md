@@ -2,9 +2,9 @@
 
 Laboratorio para validar, antes de tocar los servidores del cliente, el método de migración de los servidores SAP R/3 sobre **RHEL 5.1** (`2.6.18-53.el5`) desde el VMware de GesNet hacia **Huawei Cloud `la-south-2` (Santiago)**, **sin usar el servicio SMS**.
 
-![Diagrama de la migración](doc/diagrama-migracion-rhel51.jpg)
+![Diagrama de la migración](diagrama-migracion-rhel51.jpg)
 
-> El diagrama muestra el **flujo de producción** y se genera con el prompt [`doc/prompt-diagrama-migracion-rhel51.txt`](doc/prompt-diagrama-migracion-rhel51.txt). Este plan lo **simula paso a paso**: el notebook hace de GesNet y una cuenta de Huawei Cloud hace de destino.
+> El diagrama muestra el **flujo de producción** y se genera con el prompt [`doc/prompt-diagrama-migracion-rhel51.txt`](prompt-diagrama-migracion-rhel51.txt). Este plan lo **simula paso a paso**: el notebook hace de GesNet y una cuenta de Huawei Cloud hace de destino.
 >
 > El procedimiento para producción, con los pasos de GesNet, Huawei e Integratel, está en [`IMPLEMENTATION-GUIDE.md`](IMPLEMENTATION-GUIDE.md).
 
@@ -17,7 +17,7 @@ Laboratorio para validar, antes de tocar los servidores del cliente, el método 
 | 2 — VirtIO | **Variante A lista** (kernel `2.6.18-419.el5`). **Variante B en preparación:** clon aislado `rhel51-build` creado desde `linea-base`, falta compilar |
 | 3 — Ambiente Huawei | **Lista.** Bootstrap OIDC aplicado; workflow `ambiente` con `plan`, `deploy`, `destroy` y `armar-final` |
 | 4 a 6 — Exportar, OBS, EVS, ECS final | **Variante A lista:** SHA-256 origen = destino en los 2 discos; RHEL 5.1 arranca en el ECS con VirtIO y la misma IP |
-| 7 — Acta | **[`evidencia/acta-A.md`](evidencia/acta-A.md)**, con los 8 criterios cumplidos |
+| 7 — Acta | **[`evidencia/acta-A.md`](../evidencia/acta-A.md)**, con los 8 criterios cumplidos |
 | 8 — Vuelta atrás | **Variante A lista** |
 | 9 — Medición y extrapolación | Pendiente (hay velocidades medidas de la variante A) |
 | 10 — Cierre | **Ambiente destruido** y verificado sin recursos (2026-11-19). Faltan `decision-virtio.md` y el procedimiento final |
@@ -120,7 +120,7 @@ Y además **medir la velocidad real** de cada tramo (subida a OBS y escritura en
 | Dónde | Componente | Detalle |
 |---|---|---|
 | Notebook | VMware Workstation Pro 26 | Corre sobre Hyper-V. Incluye `ovftool` 9.1 |
-| Notebook | `rhel51-origen` | RHEL 5.1 x86_64 instalado con [`scripts/origen/rhel51-origen-ks.cfg`](scripts/origen/rhel51-origen-ks.cfg). Disco de sistema 12 GB (LVM `VolGroup00`) + disco de datos 4 GB (LVM `VolGroupDatos`). Controladora LSI Logic y NIC e1000, como en un VMware de esa época. Snapshot base antes de cualquier cambio |
+| Notebook | `rhel51-origen` | RHEL 5.1 x86_64 instalado con [`scripts/origen/rhel51-origen-ks.cfg`](../scripts/origen/rhel51-origen-ks.cfg). Disco de sistema 12 GB (LVM `VolGroup00`) + disco de datos 4 GB (LVM `VolGroupDatos`). Controladora LSI Logic y NIC e1000, como en un VMware de esa época. Snapshot base antes de cualquier cambio |
 | Notebook | `obsutil` | Sube los VMDK al bucket con la credencial temporal (variables de entorno) |
 | Huawei | Bucket OBS | Privado, cifrado del lado servidor, mismo `la-south-2`. Política: la credencial de subida solo puede `PutObject`; el receptor solo puede leer |
 | Huawei | VPC + subred | Mismo rango que la red NAT de VMware (`192.168.63.0/24`) para conservar la IP |
@@ -195,11 +195,11 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 - Script `scripts/origen/inventario.sh` (compatible con bash 3.2 de RHEL 5): `uname -a`, `fdisk -l`, `pvs`/`vgs`/`lvs`, `df -h`, `fstab`, `grub.conf`, `lsmod`, `ifcfg-*`.
 - Generar archivos de prueba en el disco LVM de datos con su lista de SHA-256 (sustituye a los conteos de tablas y reportes SAP).
 - Guardar todo en `evidencia/antes/`.
-- **Estado (2026-11-18): listo.** [`generar-datos-prueba.sh`](scripts/origen/generar-datos-prueba.sh) creó 18 archivos (1.1 GB: 13 binarios aleatorios y 5 "tablas" CSV con conteos conocidos) en `/datos/prueba` con su manifiesto `SHA256SUMS`. [`inventario.sh`](scripts/origen/inventario.sh) quedó en [`evidencia/antes/inventario.txt`](evidencia/antes/inventario.txt) (408 paquetes, 18 archivos OK). Snapshot `linea-base` tomado con la VM apagada: es el punto de partida de las dos variantes VirtIO.
+- **Estado (2026-11-18): listo.** [`generar-datos-prueba.sh`](../scripts/origen/generar-datos-prueba.sh) creó 18 archivos (1.1 GB: 13 binarios aleatorios y 5 "tablas" CSV con conteos conocidos) en `/datos/prueba` con su manifiesto `SHA256SUMS`. [`inventario.sh`](../scripts/origen/inventario.sh) quedó en [`evidencia/antes/inventario.txt`](../evidencia/antes/inventario.txt) (408 paquetes, 18 archivos OK). Snapshot `linea-base` tomado con la VM apagada: es el punto de partida de las dos variantes VirtIO.
 
 ### Fase 2 — Variantes VirtIO
 - Variante A sobre snapshot `virtio-A`; variante B sobre snapshot `virtio-B` (§5), ambas partiendo de `linea-base`.
-- **Variante A (2026-11-18): lista.** [`preparar-virtio-A.sh`](scripts/origen/preparar-virtio-A.sh) instaló `kernel-2.6.18-419.el5` (rebuild CentOS 5.11, firma GPG verificada; en producción, el paquete de Red Hat) sin cambiar el predeterminado, armó su initrd con `virtio_pci`, `virtio_blk` y `mptspi`, y aplicó la preparación común. Probado en VMware: los dos kernels arrancan con LVM, `/datos`, red y los 18 archivos de prueba OK. Cambios propios: `lvm.conf`, `sysconfig/kernel`, `ifcfg-eth0`, `grub.conf` y el kernel ([`evidencia/virtio-A/cambios.txt`](evidencia/virtio-A/cambios.txt)). Snapshot `virtio-A` con la entrada original como predeterminada.
+- **Variante A (2026-11-18): lista.** [`preparar-virtio-A.sh`](../scripts/origen/preparar-virtio-A.sh) instaló `kernel-2.6.18-419.el5` (rebuild CentOS 5.11, firma GPG verificada; en producción, el paquete de Red Hat) sin cambiar el predeterminado, armó su initrd con `virtio_pci`, `virtio_blk` y `mptspi`, y aplicó la preparación común. Probado en VMware: los dos kernels arrancan con LVM, `/datos`, red y los 18 archivos de prueba OK. Cambios propios: `lvm.conf`, `sysconfig/kernel`, `ifcfg-eth0`, `grub.conf` y el kernel ([`evidencia/virtio-A/cambios.txt`](../evidencia/virtio-A/cambios.txt)). Snapshot `virtio-A` con la entrada original como predeterminada.
 - Antes de exportar (Fase 4), la entrada VirtIO pasa a ser la predeterminada (`default=0`): el ECS no tiene quién elija en el menú de GRUB. En VMware sigue arrancando, porque su initrd también trae `mptspi`.
 - En cada una: comprobar que **sigue arrancando en VMware** con la entrada original.
 
@@ -233,7 +233,7 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 
 ### Estado de las Fases 4 a 6 — variante A (2026-11-19)
 
-**Completas.** Acta: [`evidencia/acta-A.md`](evidencia/acta-A.md).
+**Completas.** Acta: [`evidencia/acta-A.md`](../evidencia/acta-A.md).
 
 - SHA-256 origen = destino en los 2 discos.
 - RHEL 5.1 arranca en el ECS con VirtIO, conserva la IP `192.168.63.50` y los 18 archivos de prueba dan OK.
@@ -241,19 +241,19 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 Ajustes que salieron de la prueba y ya están en el código:
 
 1. **Disco de sistema desde imagen.** Huawei no acepta como disco de sistema un EVS creado vacío. El disco de sistema tiene que ser un EVS creado desde una imagen, sobre el que el receptor escribe tras ponerlo en cero (opción `limpiar` del manifiesto). En esta corrida se reutilizó el disco de sistema original del ECS final. **Corregido:** Terraform crea el EVS de orden 0 con `image_id`.
-2. **Nombres de dispositivo.** En KVM los discos se conectan como `/dev/vda` y `/dev/vdb` ([`scripts/huawei/armar-final.py`](scripts/huawei/armar-final.py)).
+2. **Nombres de dispositivo.** En KVM los discos se conectan como `/dev/vda` y `/dev/vdb` ([`scripts/huawei/armar-final.py`](../scripts/huawei/armar-final.py)).
 3. **Permisos de la agencia.** Necesitó `OBS OperateAccess`, porque el rol personalizado acotado al bucket no tuvo efecto. **Corregido:** una política del bucket nombra a la agencia (`domain/<cuenta>:agency/<agencia>`) y le da solo `ListBucket`/`HeadBucket`, `GetObject` en `incoming/` y `PutObject` en `resultados/`. Validado: el receptor lista, lee y escribe sin `OBS OperateAccess`, que queda detrás de `receptor_obs_operate_access = false`.
-4. **Receptor sin Internet.** Sin `qemu-img`, usa un agente en Python con biblioteca estándar ([`scripts/receptor/coldcopy-receptor.py`](scripts/receptor/coldcopy-receptor.py)) que:
+4. **Receptor sin Internet.** Sin `qemu-img`, usa un agente en Python con biblioteca estándar ([`scripts/receptor/coldcopy-receptor.py`](../scripts/receptor/coldcopy-receptor.py)) que:
    - lee OBS con las credenciales de la agencia;
    - escribe los EVS con su propio conversor de VMDK;
    - publica los resultados;
    - verifica el ECS final por SSH.
 5. **Diagnóstico sin SSH.** La consola serie del ECS (API `os-getConsoleOutput`) es la única ventana; ahí escriben el agente y el kernel del RHEL.
-6. **Credencial de subida.** La credencial temporal reducida deja de valer a los ~60 minutos, aunque `expires_at` diga más. **Corregido:** [`scripts/huawei/credencial-subida.py`](scripts/huawei/credencial-subida.py) la emite (1 hora por defecto) y escribe la configuración de `obsutil`; para subidas largas se vuelve a emitir y se reanuda.
+6. **Credencial de subida.** La credencial temporal reducida deja de valer a los ~60 minutos, aunque `expires_at` diga más. **Corregido:** [`scripts/huawei/credencial-subida.py`](../scripts/huawei/credencial-subida.py) la emite (1 hora por defecto) y escribe la configuración de `obsutil`; para subidas largas se vuelve a emitir y se reanuda.
 7. **Destroy seguro.** El ECS final borra al destruirse los discos que tenga conectados (`delete_disks_on_termination = true`), incluido uno que Terraform no conozca, y se destruye antes que los EVS (`depends_on`).
 **Destroy validado (2026-11-19, [run 44459118780](https://github.com/alejandromore/legacy-sap-coldcopy-poc/actions/runs/44459118780)):** 14 recursos destruidos, estado vacío. Revisado en la API de Huawei: no queda ningún ECS ni EVS del laboratorio (tampoco el disco de sistema reutilizado, que se borró con el ECS final) y el bucket ya no existe. Se conservan el bootstrap OIDC y el estado vacío en `obs-terraform-tfstate`.
 
-8. **Armado en el workflow.** `ambiente` → `armar-final` corre [`armar-final.py`](scripts/huawei/armar-final.py) con credenciales OIDC sobre los EVS del estado, en orden.
+8. **Armado en el workflow.** `ambiente` → `armar-final` corre [`armar-final.py`](../scripts/huawei/armar-final.py) con credenciales OIDC sobre los EVS del estado, en orden.
 
 ### Fase 7 — Acta de validación
 - `evidencia/acta-<variante>.md`, con la misma estructura que el acta del diagrama:
@@ -264,7 +264,7 @@ Ajustes que salieron de la prueba y ya están en el código:
 
 ### Fase 8 — Vuelta atrás
 - Encender `rhel51-origen` en VMware con la entrada original y repetir el inventario: debe ser idéntico al de la Fase 1. El origen nunca se borra.
-- **Variante A (2026-11-19): lista.** El origen, apagado e intacto desde la exportación, arranca en VMware con la entrada VirtIO y con la original: IP, 3 montajes, 0 errores en dmesg y 18 archivos OK. Las diferencias con la línea base son solo los cambios aprobados de la variante; el snapshot `linea-base` devuelve el estado previo exacto ([acta-A §6](evidencia/acta-A.md)).
+- **Variante A (2026-11-19): lista.** El origen, apagado e intacto desde la exportación, arranca en VMware con la entrada VirtIO y con la original: IP, 3 montajes, 0 errores en dmesg y 18 archivos OK. Las diferencias con la línea base son solo los cambios aprobados de la variante; el snapshot `linea-base` devuelve el estado previo exacto ([acta-A §6](../evidencia/acta-A.md)).
 
 ### Fase 9 — Medición y extrapolación
 - Con las velocidades medidas (GB/h) de subida a OBS, descarga y escritura en EVS, estimar la ventana de cada servidor real (6.5 TB, 4.5 TB, 1.75 TB, 500 GB), sumando exportación OVF y hashes.
@@ -305,7 +305,7 @@ Su output `idp_id` va a la variable `HW_IDP_ID` del environment `huawei-lab`. De
 ### Workflow `ambiente` (`.github/workflows/ambiente.yml`)
 
 1. `id-token: write` → GitHub emite un JWT con audiencia `huaweicloud`.
-2. [`.github/actions/huawei-oidc`](.github/actions/huawei-oidc/action.yml) lo canjea en IAM (`/v3.0/OS-AUTH/id-token/tokens`) por un token federado y este por AK/SK temporal + security token (`/v3.0/OS-CREDENTIAL/securitytokens`), enmascarados.
+2. [`.github/actions/huawei-oidc`](../.github/actions/huawei-oidc/action.yml) lo canjea en IAM (`/v3.0/OS-AUTH/id-token/tokens`) por un token federado y este por AK/SK temporal + security token (`/v3.0/OS-CREDENTIAL/securitytokens`), enmascarados.
 3. Terraform usa `HW_*` (provider) y `AWS_*` + `AWS_SESSION_TOKEN` (backend en OBS).
 
 | Entrada | Valores | Efecto |
@@ -377,8 +377,9 @@ Estado con la variante A (la B y la elección siguen pendientes):
 ```
 legacy-sap-coldcopy-poc/
 ├── README.md
-├── PLAN.md                       # este documento
 ├── doc/
+│   ├── PLAN.md                   # este documento
+│   ├── IMPLEMENTATION-GUIDE.md   # guía de producción: GesNet, Huawei e Integratel
 │   ├── diagrama-migracion-rhel51.jpg
 │   ├── prompt-diagrama-migracion-rhel51.txt
 │   └── procedimiento.md          # procedimiento final (Fase 10)
@@ -392,6 +393,5 @@ legacy-sap-coldcopy-poc/
 │   ├── origen/                   # kickstart, inventario.sh, generar-datos-prueba.sh, preparar-virtio-A.sh (B: pendiente)
 │   ├── receptor/                 # coldcopy-receptor.py (OBS -> EVS, SHA-256, verificación y estabilidad por SSH)
 │   └── huawei/                   # armar-final.py, credencial-subida.py
-├── IMPLEMENTATION-GUIDE.md       # guía de producción: GesNet, Huawei e Integratel
 └── evidencia/                    # antes/, virtio-A/, acta-A.md (B y decision-virtio.md: pendientes)
 ```

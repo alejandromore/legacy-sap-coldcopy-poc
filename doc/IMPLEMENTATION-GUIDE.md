@@ -2,11 +2,11 @@
 
 **Origen:** VMware de GesNet · **Destino:** Huawei Cloud `la-south-2` (Santiago) · **Usuarios:** Integratel
 
-![Diagrama de la migración](doc/diagrama-migracion-rhel51.jpg)
+![Diagrama de la migración](diagrama-migracion-rhel51.jpg)
 
 Esta guía describe, paso a paso y por responsable, cómo migrar **un** servidor SAP R/3 + Oracle 10g sobre **RHEL 5.1** (`2.6.18-53.el5`) desde el VMware de GesNet hacia Huawei Cloud **sin reinstalar el sistema y sin el servicio SMS**. El mismo procedimiento se repite por cada servidor.
 
-El método se validó en laboratorio con un RHEL 5.1 oficial ([`PLAN.md`](PLAN.md), [`evidencia/acta-A.md`](evidencia/acta-A.md)). Resultado:
+El método se validó en laboratorio con un RHEL 5.1 oficial ([`PLAN.md`](PLAN.md), [`evidencia/acta-A.md`](../evidencia/acta-A.md)). Resultado:
 
 - SHA-256 de origen igual al de destino en el 100 % de los discos.
 - El servidor arranca en el ECS con VirtIO, conserva su IP privada y pasa 5 reinicios y escritura sostenida sin errores.
@@ -132,13 +132,13 @@ RHEL 5.1 **no trae VirtIO**: Red Hat lo incorporó en RHEL 5.3 (`2.6.18-128.el5`
 | Origen del binario | Paquete firmado por Red Hat (suscripción del cliente) | Compilado por el integrador |
 | Defendible ante cumplimiento | Alta: binario del fabricante | Media: requiere justificar la compilación |
 | Riesgo de compatibilidad | El kernel 419 corre con la userland de 5.1. Probado: LVM, ext3, red, SSH y 18 archivos OK | La API del kernel 53 difiere de la de 128; el backport puede requerir parches |
-| Evidencia | [`evidencia/acta-A.md`](evidencia/acta-A.md) | Pendiente (`evidencia/acta-B.md`) |
+| Evidencia | [`evidencia/acta-A.md`](../evidencia/acta-A.md) | Pendiente (`evidencia/acta-B.md`) |
 
 La elección final se documenta en `evidencia/decision-virtio.md` con los criterios del [`PLAN.md` §5](PLAN.md): arranque, estabilidad, cumplimiento, cambios en el sistema, reversibilidad y esfuerzo por servidor.
 
 ### 4.1 Opción A — pasos (GesNet ejecuta, Huawei prepara)
 
-Script completo: [`scripts/origen/preparar-virtio-A.sh`](scripts/origen/preparar-virtio-A.sh). Es compatible con bash 3.2 y se puede volver a correr sin duplicar cambios.
+Script completo: [`scripts/origen/preparar-virtio-A.sh`](../scripts/origen/preparar-virtio-A.sh). Es compatible con bash 3.2 y se puede volver a correr sin duplicar cambios.
 
 ```bash
 # En el servidor RHEL 5.1, como root, ANTES de la ventana (el servidor sigue en servicio).
@@ -236,11 +236,11 @@ cat /etc/fstab; grep -E 'root=|kernel' /boot/grub/grub.conf
 
 ## 5. Procedimiento paso a paso
 
-Cada paso indica **quién** lo ejecuta. Los comandos de Huawei usan el workflow [`ambiente`](.github/workflows/ambiente.yml), con credenciales OIDC y sin AK/SK guardadas. Se pueden lanzar desde la pestaña Actions de GitHub o con `gh`.
+Cada paso indica **quién** lo ejecuta. Los comandos de Huawei usan el workflow [`ambiente`](../.github/workflows/ambiente.yml), con credenciales OIDC y sin AK/SK guardadas. Se pueden lanzar desde la pestaña Actions de GitHub o con `gh`.
 
 ### Fase 0 — Preparación del ambiente (Huawei), días antes
 
-1. **Datos del servidor.** Pedir a GesNet cantidad y tamaño de discos, IP, máscara, gateway y DNS. Ajustar en [`terraform/variables.tf`](terraform/variables.tf) (o en un `tfvars` por servidor):
+1. **Datos del servidor.** Pedir a GesNet cantidad y tamaño de discos, IP, máscara, gateway y DNS. Ajustar en [`terraform/variables.tf`](../terraform/variables.tf) (o en un `tfvars` por servidor):
    ```hcl
    subnet_cidr    = "10.20.30.0/24"   # MISMA subred que en GesNet
    subnet_gateway = "10.20.30.1"      # MISMO gateway que en GesNet
@@ -384,7 +384,7 @@ sync; poweroff
 
 ### Fase 6 — Recepción en EVS y SHA-256 en destino (Huawei, automático)
 
-El agente del receptor ([`scripts/receptor/coldcopy-receptor.py`](scripts/receptor/coldcopy-receptor.py)) revisa OBS cada minuto. Usa solo la biblioteca estándar de Python, las credenciales temporales de su agencia y la red interna. Por cada disco del manifiesto:
+El agente del receptor ([`scripts/receptor/coldcopy-receptor.py`](../scripts/receptor/coldcopy-receptor.py)) revisa OBS cada minuto. Usa solo la biblioteca estándar de Python, las credenciales temporales de su agencia y la red interna. Por cada disco del manifiesto:
 
 1. Descarga el VMDK y calcula el SHA-256 del archivo. Debe ser igual a `sha256_archivo`.
 2. Si el disco lleva `limpiar`, pone en cero el tramo del disco en el EVS.
@@ -406,7 +406,7 @@ gh workflow run ambiente.yml -f action=deploy -f etapa=final        # libera los
 gh workflow run ambiente.yml -f action=armar-final -f etapa=final   # conecta EVS y enciende
 ```
 
-`armar-final` ([`scripts/huawei/armar-final.py`](scripts/huawei/armar-final.py)) hace lo siguiente:
+`armar-final` ([`scripts/huawei/armar-final.py`](../scripts/huawei/armar-final.py)) hace lo siguiente:
 
 1. Desconecta el disco de sistema provisorio del ECS final.
 2. Conecta el EVS de orden 0 como **`/dev/vda`** (disco de sistema) y los demás como `/dev/vdb`, `/dev/vdc`… en el orden de origen.
@@ -551,7 +551,7 @@ La estimación completa de los cuatro servidores (6.5 TB, 4.5 TB, 1.75 TB y 500 
 
 ## 9. Acta de validación (plantilla)
 
-Modelo completo: [`evidencia/acta-A.md`](evidencia/acta-A.md).
+Modelo completo: [`evidencia/acta-A.md`](../evidencia/acta-A.md).
 
 ```markdown
 # Acta de validación — <servidor> — <fecha>
@@ -586,14 +586,14 @@ Integratel: ____________  GesNet: ____________  Huawei: ____________
 
 | Archivo | Para qué sirve | Quién lo usa |
 |---|---|---|
-| [`scripts/origen/inventario.sh`](scripts/origen/inventario.sh) | Inventario técnico antes y después (bash 3.2) | GesNet, Huawei |
-| [`scripts/origen/preparar-virtio-A.sh`](scripts/origen/preparar-virtio-A.sh) | Opción A completa | GesNet |
-| [`scripts/huawei/credencial-subida.py`](scripts/huawei/credencial-subida.py) | Credencial temporal de solo subida + configuración de `obsutil` | Huawei |
-| [`scripts/receptor/coldcopy-receptor.py`](scripts/receptor/coldcopy-receptor.py) | Agente del receptor: OBS → EVS, SHA-256, verificación y estabilidad | Huawei (automático) |
-| [`scripts/huawei/armar-final.py`](scripts/huawei/armar-final.py) | Conecta los EVS al ECS final y lo enciende | Huawei (workflow) |
-| [`terraform/`](terraform/) | VPC, OBS, agencia, receptor, EVS y ECS final | Huawei |
-| [`terraform/bootstrap/`](terraform/bootstrap/) | Proveedor OIDC de GitHub en IAM (una vez) | Huawei |
-| [`.github/workflows/ambiente.yml`](.github/workflows/ambiente.yml) | `plan`, `deploy`, `armar-final`, `destroy` | Huawei |
+| [`scripts/origen/inventario.sh`](../scripts/origen/inventario.sh) | Inventario técnico antes y después (bash 3.2) | GesNet, Huawei |
+| [`scripts/origen/preparar-virtio-A.sh`](../scripts/origen/preparar-virtio-A.sh) | Opción A completa | GesNet |
+| [`scripts/huawei/credencial-subida.py`](../scripts/huawei/credencial-subida.py) | Credencial temporal de solo subida + configuración de `obsutil` | Huawei |
+| [`scripts/receptor/coldcopy-receptor.py`](../scripts/receptor/coldcopy-receptor.py) | Agente del receptor: OBS → EVS, SHA-256, verificación y estabilidad | Huawei (automático) |
+| [`scripts/huawei/armar-final.py`](../scripts/huawei/armar-final.py) | Conecta los EVS al ECS final y lo enciende | Huawei (workflow) |
+| [`terraform/`](../terraform/) | VPC, OBS, agencia, receptor, EVS y ECS final | Huawei |
+| [`terraform/bootstrap/`](../terraform/bootstrap/) | Proveedor OIDC de GitHub en IAM (una vez) | Huawei |
+| [`.github/workflows/ambiente.yml`](../.github/workflows/ambiente.yml) | `plan`, `deploy`, `armar-final`, `destroy` | Huawei |
 
 ### 10.2 Bootstrap OIDC (Huawei, una sola vez)
 
