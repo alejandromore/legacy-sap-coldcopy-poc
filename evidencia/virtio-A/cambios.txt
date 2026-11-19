@@ -1,0 +1,27 @@
+# Variante A: archivos nuevos o modificados respecto de linea-base (referencia: /datos/prueba/SHA256SUMS)
+# Excluye /proc /sys /dev /tmp /var /datos y /root/virtio-A (insumos)
+/etc/adjtime
+/etc/aliases.db
+/etc/blkid/blkid.tab
+/etc/blkid/blkid.tab.old
+/etc/lvm/cache/.cache
+/etc/lvm/lvm.conf
+/etc/mtab
+/etc/printcap
+/etc/reader.conf
+/etc/smartd.conf
+/etc/sysconfig/hwconf
+/etc/sysconfig/kernel
+/etc/sysconfig/network-scripts/ifcfg-eth0
+/lib/modules/2.6.18-419.el5/: 1292 archivos (del paquete kernel)
+Total fuera de /lib/modules: 13
+# /boot es otro sistema de archivos (find -xdev no lo recorre). Cambios en /boot:
+/boot/grub/grub.conf (entrada nueva; default sigue en el kernel original)
+/boot/vmlinuz-2.6.18-419.el5
+/boot/initrd-2.6.18-419.el5.img (con virtio_pci, virtio_blk, mptspi)
+/boot/System.map-2.6.18-419.el5
+/boot/config-2.6.18-419.el5
+/boot/symvers-2.6.18-419.el5.gz
+# Archivos que cambia el sistema solo (arranques, kudzu, cachés): /etc/adjtime, aliases.db,
+# blkid.tab*, lvm/cache, mtab, printcap, reader.conf, smartd.conf, sysconfig/hwconf.
+# Cambios propios de la variante: lvm.conf, sysconfig/kernel, ifcfg-eth0, grub.conf y el kernel.

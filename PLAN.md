@@ -95,7 +95,6 @@ Y además **medir la velocidad real** de cada tramo (subida a OBS y escritura en
 |---|---|---|
 | Notebook | VMware Workstation Pro 26 | Corre sobre Hyper-V. Incluye `ovftool` 9.1 |
 | Notebook | `rhel51-origen` | RHEL 5.1 x86_64 instalado con [`scripts/origen/rhel51-origen-ks.cfg`](scripts/origen/rhel51-origen-ks.cfg). Disco de sistema 12 GB (LVM `VolGroup00`) + disco de datos 4 GB (LVM `VolGroupDatos`). Controladora LSI Logic y NIC e1000, como en un VMware de esa época. Snapshot base antes de cualquier cambio |
-| Notebook | `aux-copia` | Rocky Linux 9.9. **Solo laboratorio**: calcula el SHA-256 del contenido crudo de cada VMDK exportado con `qemu-img` (en producción lo hace GesNet con sus herramientas). No aparece en el diagrama |
 | Notebook | `obsutil` | Sube los VMDK al bucket con la credencial temporal (variables de entorno) |
 | Huawei | Bucket OBS | Privado, cifrado del lado servidor, mismo `la-south-2`. Política: la credencial de subida solo puede `PutObject`; el receptor solo puede leer |
 | Huawei | VPC + subred | Mismo rango que la red NAT de VMware (`192.168.63.0/24`) para conservar la IP |
@@ -113,7 +112,7 @@ Y además **medir la velocidad real** de cada tramo (subida a OBS y escritura en
 | P1 | VMware Workstation Pro instalado | Alejandro | Listo (2026-11-18) |
 | P2 | ISO oficial RHEL 5.1 x86_64 (Binary DVD, SHA-256 publicado por Red Hat) | Claude, con la cuenta de Alejandro | Listo (2026-11-18): `rhel-5.1-server-x86_64-dvd.iso`, SHA-256 verificado |
 | P3 | `rhel51-origen` reducida: disco de sistema + disco LVM pequeño, sin datos productivos | Claude | Listo (2026-11-18): RHEL 5.1 instalado, IP `192.168.63.50`, snapshot `base` |
-| P4 | `aux-copia` con Rocky Linux 9.9 | Claude | Listo (2026-11-18). Falta instalar `qemu-img` |
+| P4 | ~~`aux-copia` con Rocky Linux 9.9~~ | Claude | Retirada (2026-11-18): el hash crudo se calcula en Windows con `vmware-vdiskmanager` (Fase 4) |
 | P5 | AK/SK de administrador **solo para el bootstrap OIDC** (una vez, en local, variables de entorno). Después GitHub se federa por OIDC y no guarda ninguna AK/SK | Alejandro | Listo (2026-11-18): bootstrap aplicado |
 | P6 | Cuota en `la-south-2` para 2 ECS, 4 EVS, 1 bucket OBS, 1 agencia IAM (no se necesita EIP). Bucket de estados `obs-terraform-tfstate` existente (compartido con `nextcloud-huawei`) | Alejandro | Listo (2026-11-18): el deploy no encontró límites |
 | P10 | Repositorio GitHub `alejandromore/legacy-sap-coldcopy-poc` con el environment `huawei-lab` y sus variables `HW_IDP_ID` y `HW_DOMAIN_NAME` | Claude | Listo (2026-11-18) |
@@ -162,7 +161,7 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 
 ### Fase 0 — Repositorio y entorno
 - Estructura del repositorio y `.gitignore` (excluir `*.tfstate`, `*.vmdk`, `*.ovf`, `*.iso`, llaves y `terraform.tfvars`). **Listo.**
-- VMware Workstation (P1), `aux-copia` (P4). **Listo.**
+- VMware Workstation (P1). **Listo.**
 - Instalar `rhel51-origen` con RHEL 5.1 oficial (P2, P3) y fijar su IP (`192.168.63.50`). **Listo**: `redhat-release-5Server-5.1.0.2`, kernel `2.6.18-53.el5`, 408 paquetes, `VolGroup00` (sistema) y `VolGroupDatos` (`/datos`), SSH solo con llave RSA.
 - **Snapshot base** de `rhel51-origen`. **Listo** (snapshot `base`, ISOs desconectadas).
 
@@ -174,6 +173,8 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 
 ### Fase 2 — Variantes VirtIO
 - Variante A sobre snapshot `virtio-A`; variante B sobre snapshot `virtio-B` (§5), ambas partiendo de `linea-base`.
+- **Variante A (2026-11-18): lista.** [`preparar-virtio-A.sh`](scripts/origen/preparar-virtio-A.sh) instaló `kernel-2.6.18-419.el5` (rebuild CentOS 5.11, firma GPG verificada; en producción, el paquete de Red Hat) sin cambiar el predeterminado, armó su initrd con `virtio_pci`, `virtio_blk` y `mptspi`, y aplicó la preparación común. Probado en VMware: los dos kernels arrancan con LVM, `/datos`, red y los 18 archivos de prueba OK. Cambios propios: `lvm.conf`, `sysconfig/kernel`, `ifcfg-eth0`, `grub.conf` y el kernel ([`evidencia/virtio-A/cambios.txt`](evidencia/virtio-A/cambios.txt)). Snapshot `virtio-A` con la entrada original como predeterminada.
+- Antes de exportar (Fase 4), la entrada VirtIO pasa a ser la predeterminada (`default=0`): el ECS no tiene quién elija en el menú de GRUB. En VMware sigue arrancando, porque su initrd también trae `mptspi`.
 - En cada una: comprobar que **sigue arrancando en VMware** con la entrada original.
 
 ### Fase 3 — Construcción del ambiente Huawei (ver §7)
@@ -183,10 +184,10 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 - **Estado (2026-11-18):** desplegado con `deploy`/`recepcion` ([run 44444599543](https://github.com/alejandromore/legacy-sap-coldcopy-poc/actions/runs/44444599543)), 15 recursos. Huawei aceptó el gateway `.2`. Receptor en `192.168.63.159` con los EVS `sistema` (40 GB) y `datos` (10 GB); ECS SAP final apagado en `192.168.63.50`; bucket `obs-legacy-coldcopy-vmdk`. Pendiente: validar cloud-init y acceso a OBS del receptor por VNC.
 
 ### Fase 4 — Exportación y subida (rol de GesNet, por cada variante)
-1. Apagar `rhel51-origen` (`poweroff`).
+1. Dejar la entrada VirtIO como predeterminada en `grub.conf` y apagar `rhel51-origen` (`poweroff`).
 2. Exportar con `ovftool` a `export/<variante>/`: un `.ovf` + un VMDK por disco.
 3. SHA-256 de cada archivo VMDK exportado (`Get-FileHash`): verifica el tramo de transferencia.
-4. SHA-256 del **contenido crudo** de cada disco: en `aux-copia`, `qemu-img convert -O raw` del VMDK exportado y `sha256sum`. Es el "SHA-256 origen" del acta.
+4. SHA-256 del **contenido crudo** de cada disco: `vmware-vdiskmanager -r <exportado>.vmdk -t 4 crudo.vmdk` genera un disco preallocated cuyo `crudo-flat.vmdk` es la imagen cruda, y `Get-FileHash -Algorithm SHA256` sobre ese archivo da el "SHA-256 origen" del acta. Se calcula sobre el VMDK exportado, no sobre el original, para validar también la exportación.
 5. Subir con `obsutil cp` usando la credencial temporal; registrar duración y velocidad.
 6. Comprobar que la credencial de subida **no puede** listar, leer ni borrar objetos.
 
@@ -200,7 +201,7 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 ### Fase 6 — Armado del ECS SAP final
 1. Workflow `ambiente` con `action=deploy`, `etapa=final`: elimina el receptor y deja los EVS libres. El ECS final ya existe, apagado y con la IP de origen.
 2. Desconectar el disco de sistema provisorio del ECS final y conectar los EVS: el de sistema como disco de sistema y los de datos en el mismo orden (script `scripts/huawei/armar-final.py` en un workflow, por pendiente).
-3. Encender; en la consola VNC elegir la entrada de GRUB de Huawei.
+3. Encender: arranca la entrada VirtIO, predeterminada desde la Fase 4.
 4. Verificar: arranque, LVM, montajes, **misma IP**, `ping` y SSH desde el receptor (simula el acceso de Integratel), y SHA-256 de los archivos de prueba contra la lista de la Fase 1.
 5. Opcional: copia CBR del ECS final y restauración de prueba.
 
@@ -337,7 +338,6 @@ legacy-sap-coldcopy-poc/
 ├── scripts/
 │   ├── origen/                   # kickstart, inventario.sh, preparar-virtio-A.sh, preparar-virtio-B.sh
 │   ├── exportacion/              # exportar-ovf.ps1, hash-crudo.sh, subir-obs.ps1 (rol GesNet)
-│   ├── auxiliar/                 # kickstart de aux-copia
 │   ├── receptor/                 # escribir-evs.sh (obsutil + qemu-img + SHA-256)
 │   └── huawei/                   # armar-final.py (cambio de disco de sistema, Fase 6)
 └── evidencia/                    # antes/, despues/, acta-A.md, acta-B.md, decision-virtio.md
