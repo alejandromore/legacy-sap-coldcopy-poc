@@ -225,6 +225,8 @@ Ajustes que salieron de la prueba y ya están en el código:
 5. **Diagnóstico sin SSH.** La consola serie del ECS (API `os-getConsoleOutput`) es la única ventana; ahí escriben el agente y el kernel del RHEL.
 6. **Credencial de subida.** La credencial temporal reducida deja de valer a los ~60 minutos, aunque `expires_at` diga más. **Corregido:** [`scripts/huawei/credencial-subida.py`](scripts/huawei/credencial-subida.py) la emite (1 hora por defecto) y escribe la configuración de `obsutil`; para subidas largas se vuelve a emitir y se reanuda.
 7. **Destroy seguro.** El ECS final borra al destruirse los discos que tenga conectados (`delete_disks_on_termination = true`), incluido uno que Terraform no conozca, y se destruye antes que los EVS (`depends_on`).
+**Destroy validado (2026-11-19, [run 44459118780](https://github.com/alejandromore/legacy-sap-coldcopy-poc/actions/runs/44459118780)):** 14 recursos destruidos, estado vacío. Revisado en la API de Huawei: no queda ningún ECS ni EVS del laboratorio (tampoco el disco de sistema reutilizado, que se borró con el ECS final) y el bucket ya no existe. Se conservan el bootstrap OIDC y el estado vacío en `obs-terraform-tfstate`.
+
 8. **Armado en el workflow.** `ambiente` → `armar-final` corre [`armar-final.py`](scripts/huawei/armar-final.py) con credenciales OIDC sobre los EVS del estado, en orden.
 
 ### Fase 7 — Acta de validación
