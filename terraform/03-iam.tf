@@ -41,5 +41,5 @@ resource "huaweicloud_identity_agency" "receptor" {
   delegated_service_name = "op_svc_ecs"
   # "Todos los recursos": con solo domain_roles (servicios globales) OBS
   # respondió AccessDenied a las credenciales temporales del metadata service.
-  all_resources_roles = [huaweicloud_identity_role.receptor_obs.name]
+  all_resources_roles = [huaweicloud_identity_role.receptor_obs.name, "OBS OperateAccess"]
 }
