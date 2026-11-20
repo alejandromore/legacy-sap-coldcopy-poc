@@ -12,9 +12,11 @@ El método se validó en laboratorio con un RHEL 5.1 oficial ([`PLAN.md`](PLAN.m
 - El servidor arranca en el ECS con VirtIO, conserva su IP privada y pasa 5 reinicios y escritura sostenida sin errores.
 - El origen vuelve a arrancar intacto en VMware.
 
-> **Estado de las opciones VirtIO:**
-> - La **opción A** (kernel adicional) está **validada de punta a punta**.
-> - La **opción B** (módulos compilados) está **pendiente de validación** en el laboratorio. Sus pasos se incluyen para completar la guía y se marcan como tales.
+> **Estado de las opciones VirtIO:** las dos están **validadas de punta a punta** ([`acta-A.md`](../evidencia/acta-A.md), [`acta-B.md`](../evidencia/acta-B.md)).
+> - Se recomienda la **A** por cumplimiento (binario firmado por Red Hat).
+> - La **B** es la alternativa si no se puede obtener el kernel de Red Hat o si se exige mantener el kernel original.
+>
+> Decisión: [`decision-virtio.md`](../evidencia/decision-virtio.md).
 
 ---
 
@@ -124,15 +126,15 @@ GesNet (VMware)                 Huawei Cloud la-south-2
 
 RHEL 5.1 **no trae VirtIO**: Red Hat lo incorporó en RHEL 5.3 (`2.6.18-128.el5`). Sin VirtIO el ECS no ve sus discos ni su red. Hay dos formas de agregarlo sin reinstalar ni actualizar el sistema. En las dos, la entrada original de GRUB sigue existiendo y el servidor sigue arrancando en VMware.
 
-| | **Opción A — kernel adicional** (validada) | **Opción B — backport `kmod-virtio`** (pendiente de validación) |
+| | **Opción A — kernel adicional** (validada, recomendada) | **Opción B — backport `kmod-virtio`** (validada, alternativa) |
 |---|---|---|
 | Qué se hace | Instalar `kernel-2.6.18-419.el5` (serie 5.11) **al lado** del original, con su propia entrada de GRUB | Compilar `virtio`, `virtio_ring`, `virtio_pci`, `virtio_blk` y `virtio_net` para `2.6.18-53.el5` desde las fuentes de RHEL 5.3, en un clon aislado, y copiar solo los `.ko` |
 | Qué no cambia | `glibc 2.5`, librerías y kernel original | Kernel, `glibc` y librerías |
 | Archivos tocados | `/boot` (kernel e initrd nuevos), `/lib/modules/2.6.18-419.el5`, `grub.conf`, `lvm.conf`, `ifcfg-eth0`, `sysconfig/kernel` | `/lib/modules/2.6.18-53.el5/extra/virtio/`, initrd paralelo, `grub.conf`, `lvm.conf`, `ifcfg-eth0` |
 | Origen del binario | Paquete firmado por Red Hat (suscripción del cliente) | Compilado por el integrador |
 | Defendible ante cumplimiento | Alta: binario del fabricante | Media: requiere justificar la compilación |
-| Riesgo de compatibilidad | El kernel 419 corre con la userland de 5.1. Probado: LVM, ext3, red, SSH y 18 archivos OK | La API del kernel 53 difiere de la de 128; el backport puede requerir parches |
-| Evidencia | [`evidencia/acta-A.md`](../evidencia/acta-A.md) | Pendiente (`evidencia/acta-B.md`) |
+| Riesgo de compatibilidad | El kernel 419 corre con la userland de 5.1. Probado: LVM, ext3, red, SSH y 18 archivos OK | Resuelto: las fuentes de 5.3 compilan contra `-53` con un header de 2 definiciones, sin parches. Probado igual que la A |
+| Evidencia | [`evidencia/acta-A.md`](../evidencia/acta-A.md) | [`evidencia/acta-B.md`](../evidencia/acta-B.md) |
 
 La elección final se documenta en `evidencia/decision-virtio.md` con los criterios del [`PLAN.md` §5](PLAN.md): arranque, estabilidad, cumplimiento, cambios en el sistema, reversibilidad y esfuerzo por servidor.
 
@@ -182,41 +184,66 @@ zcat /boot/initrd-2.6.18-419.el5.img | cpio -t 2>/dev/null | grep -E 'virtio|mpt
    ```
 3. Volver `default=` a la entrada original hasta la ventana.
 
-### 4.2 Opción B — pasos (pendiente de validación)
+### 4.2 Opción B — pasos (validada)
 
-> Estos pasos todavía no se ejecutaron de punta a punta en el laboratorio. Se completan y corrigen cuando se valide la opción B.
+**Compilación, una sola vez por versión de kernel.** Se hace en un **clon aislado** del servidor, nunca en el productivo, porque ahí se instalan `gcc` y las fuentes. Script completo: [`scripts/origen/compilar-virtio-B.sh`](../scripts/origen/compilar-virtio-B.sh).
 
 ```bash
-# En un CLON AISLADO del servidor (nunca en el productivo): ahí se instalan gcc y las fuentes.
-# Insumos: kernel-2.6.18-128.el5.src.rpm, kernel-devel-2.6.18-53.el5.x86_64.rpm,
-#          gcc/cpp/libgomp 4.1.2-14.el5, glibc-devel/glibc-headers 2.5-18, rpm-build (DVD de RHEL 5.1)
-rpm -ivh kernel-devel-2.6.18-53.el5.x86_64.rpm glibc-headers-*.rpm glibc-devel-*.rpm \
-         libgomp-*.rpm cpp-*.rpm gcc-4.1.2-*.rpm rpm-build-*.rpm
-rpm -ivh kernel-2.6.18-128.el5.src.rpm
+# En el clon, como root. Insumos en /root/virtio-B:
+#   kernel-2.6.18-128.el5.src.rpm  (fuentes de RHEL 5.3: portal de Red Hat o vault)
+#   kcompat.h                      (scripts/origen/kmod-virtio/kcompat.h)
+# Herramientas desde el DVD de RHEL 5.1 conectado al clon. Se instalan con rpm: el yum
+# de 5.1 no lee el DVD como repositorio ("unknown url type: media").
+mount -o ro /dev/hdd /media/dvd          # o /dev/hdc según el clon
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+cd /media/dvd/Server && rpm -Uvh gcc-4.1.2-*.x86_64.rpm cpp-*.x86_64.rpm libgomp-*.x86_64.rpm \
+  glibc-devel-*.x86_64.rpm glibc-headers-*.x86_64.rpm kernel-headers-*.x86_64.rpm \
+  kernel-devel-2.6.18-53.el5.x86_64.rpm rpm-build-*.x86_64.rpm redhat-rpm-config-*.noarch.rpm \
+  elfutils-0*.x86_64.rpm elfutils-libs-*.x86_64.rpm unifdef-*.x86_64.rpm
+
+# Fuentes de 5.3 con los parches de Red Hat aplicados
+cd /root/virtio-B && rpm -ivh kernel-2.6.18-128.el5.src.rpm
 rpmbuild -bp --nodeps --target=x86_64 /usr/src/redhat/SPECS/kernel-2.6.spec
 SRC=/usr/src/redhat/BUILD/kernel-2.6.18/linux-2.6.18.x86_64
 
-mkdir -p /root/kmod-virtio/include/linux && cd /root/kmod-virtio
-cp $SRC/drivers/virtio/virtio.c $SRC/drivers/virtio/virtio_ring.c $SRC/drivers/virtio/virtio_pci.c .
-cp $SRC/drivers/block/virtio_blk.c $SRC/drivers/net/virtio_net.c .
-cp $SRC/include/linux/virtio*.h include/linux/
-cat > Makefile <<'EOF'
-obj-m := virtio.o virtio_ring.o virtio_pci.o virtio_blk.o virtio_net.o
-EXTRA_CFLAGS += -I$(M)/include
-EOF
-make -C /lib/modules/2.6.18-53.el5/build M=$PWD modules    # corregir diferencias de API si las hay
-sha256sum *.ko > SHA256SUMS
+# Copia aislada de los drivers (sin modificarlos) y compilación contra 2.6.18-53.el5
+mkdir -p kmod/include/linux
+cp $SRC/drivers/virtio/virtio.c $SRC/drivers/virtio/virtio_ring.c $SRC/drivers/virtio/virtio_pci.c \
+   $SRC/drivers/block/virtio_blk.c $SRC/drivers/net/virtio_net.c kmod/
+cp $SRC/include/linux/virtio*.h kmod/include/linux/
+cp kcompat.h kmod/
+printf 'obj-m := virtio.o virtio_ring.o virtio_pci.o virtio_blk.o virtio_net.o\nEXTRA_CFLAGS += -I$(M)/include -include $(M)/kcompat.h\n' > kmod/Makefile
+make -C /lib/modules/2.6.18-53.el5/build M=$PWD/kmod modules
+cd kmod && sha256sum *.ko > SHA256SUMS
+/sbin/modinfo -F vermagic virtio_blk.ko          # 2.6.18-53.el5 SMP mod_unload gcc-4.1
 
-# En el servidor (desde aquí se aplica sobre el origen): copiar solo los .ko
+# Prueba de carga en el clon (mismo kernel): sin símbolos sin resolver
+for m in virtio virtio_ring virtio_pci virtio_blk virtio_net; do /sbin/insmod ./$m.ko; done
+/sbin/lsmod | grep virtio
+for m in virtio_net virtio_blk virtio_pci virtio_ring virtio; do /sbin/rmmod $m; done
+```
+
+`kcompat.h` agrega lo único que la API de `2.6.18-53` no tiene: `bool`/`true`/`false` y `uninitialized_var`.
+
+**Aplicación en cada servidor** (antes de la ventana). Script completo: [`scripts/origen/preparar-virtio-B.sh`](../scripts/origen/preparar-virtio-B.sh). En el servidor no se instala nada: solo se copian los `.ko`.
+
+```bash
+# En el servidor, como root, con los .ko y SHA256SUMS en /root/virtio-B/kmod
+uname -r                                               # debe ser exactamente 2.6.18-53.el5
+cd /root/virtio-B && (cd kmod && sha256sum -c SHA256SUMS)
 mkdir -p /lib/modules/2.6.18-53.el5/extra/virtio
-cp virtio*.ko /lib/modules/2.6.18-53.el5/extra/virtio/
+cp kmod/virtio*.ko /lib/modules/2.6.18-53.el5/extra/virtio/
 depmod -a 2.6.18-53.el5
+# initrd PARALELO (el original no se toca), con virtio y el driver SCSI de VMware
 mkinitrd -f --with=virtio_pci --with=virtio_blk /boot/initrd-2.6.18-53.el5-virtio.img 2.6.18-53.el5
-# Entrada de GRUB paralela, mismo kernel con initrd VirtIO:
+# Entrada de GRUB nueva al principio, mismo kernel con initrd VirtIO (el script corre "default" en 1):
 #   title RHEL 5.1 - kernel 2.6.18-53.el5 + kmod-virtio (Huawei Cloud)
+#     root (hd0,0)
 #     kernel /vmlinuz-2.6.18-53.el5 ro root=/dev/VolGroup00/LogVol00 console=ttyS0,115200 console=tty0 clocksource=acpi_pm
 #     initrd /initrd-2.6.18-53.el5-virtio.img
 ```
+
+Después, la preparación común (§4.3) y la misma prueba de los dos arranques en VMware que la opción A.
 
 ### 4.3 Preparación común (ambas opciones)
 

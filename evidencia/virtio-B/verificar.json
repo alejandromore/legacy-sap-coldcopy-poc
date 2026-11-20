@@ -1,0 +1,5 @@
+{
+  "ip": "192.168.63.50",
+  "llave": "incoming/llave/legacy-coldcopy-rhel51",
+  "inventario": "incoming/virtio-B/inventario.sh"
+}

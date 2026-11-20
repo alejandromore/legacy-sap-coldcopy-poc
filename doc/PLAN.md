@@ -8,29 +8,24 @@ Laboratorio para validar, antes de tocar los servidores del cliente, el método 
 >
 > El procedimiento para producción, con los pasos de GesNet, Huawei e Integratel, está en [`IMPLEMENTATION-GUIDE.md`](IMPLEMENTATION-GUIDE.md).
 
-## Estado al 2026-11-19
+## Estado al 2026-11-20
 
 | Fase | Estado |
 |---|---|
 | 0 — Entorno | **Lista.** VMware Workstation 26, `rhel51-origen` con RHEL 5.1 oficial (ISO de Red Hat con SHA-256 verificado), IP `192.168.63.50`. `aux-copia` retirada |
 | 1 — Línea base | **Lista.** Inventario y 18 archivos de prueba (1.1 GB) en `/datos/prueba`. Snapshot `linea-base` |
-| 2 — VirtIO | **Variante A lista** (kernel `2.6.18-419.el5`). **Variante B en preparación:** clon aislado `rhel51-build` creado desde `linea-base`, falta compilar |
+| 2 — VirtIO | **Las dos variantes listas.** A: kernel `2.6.18-419.el5`. B: `kmod-virtio` compilado para `2.6.18-53.el5` en el clon aislado `rhel51-build`, con un header de compatibilidad de 2 definiciones |
 | 3 — Ambiente Huawei | **Lista.** Bootstrap OIDC aplicado; workflow `ambiente` con `plan`, `deploy`, `destroy` y `armar-final` |
-| 4 a 6 — Exportar, OBS, EVS, ECS final | **Variante A lista:** SHA-256 origen = destino en los 2 discos; RHEL 5.1 arranca en el ECS con VirtIO y la misma IP |
-| 7 — Acta | **[`evidencia/acta-A.md`](../evidencia/acta-A.md)**, con los 8 criterios cumplidos |
-| 8 — Vuelta atrás | **Variante A lista** |
+| 4 a 6 — Exportar, OBS, EVS, ECS final | **Las dos variantes listas:** SHA-256 origen = destino en los 2 discos. RHEL 5.1 arranca en el ECS con VirtIO y la misma IP; con la B, con su kernel original. La B usó el procedimiento corregido: EVS de sistema desde imagen y `armar-final` desde el workflow |
+| 7 — Acta | **[`acta-A.md`](../evidencia/acta-A.md)** y **[`acta-B.md`](../evidencia/acta-B.md)**, con los 8 criterios cumplidos cada una. Decisión: **[`decision-virtio.md`](../evidencia/decision-virtio.md)** (recomendada A; B, alternativa validada; aprueba Integratel) |
+| 8 — Vuelta atrás | **Las dos variantes listas** |
 | 9 — Medición y extrapolación | Pendiente (hay velocidades medidas de la variante A) |
-| 10 — Cierre | **Ambiente destruido** y verificado sin recursos (2026-11-19). Faltan `decision-virtio.md` y el procedimiento final |
+| 10 — Cierre | **Ambiente destruido** después de cada variante (2026-11-19 y 2026-11-20). Falta el procedimiento final, que se cierra con la variante que apruebe Integratel |
 
-**Próxima sesión.**
-1. Variante B:
-   - Compilar `virtio`, `virtio_ring`, `virtio_pci`, `virtio_blk` y `virtio_net` para `2.6.18-53.el5` en `rhel51-build`, a partir de `kernel-2.6.18-128.el5.src.rpm` (`rpmbuild -bp`, con `rpm-build` del DVD).
-   - Aplicarlos en el origen desde `linea-base` y probarlos en VMware.
-   - Llevarla a Huawei con el workflow (`deploy` → exportar → subir → `deploy final` → `armar-final`).
-   - Estabilidad, vuelta atrás, `acta-B.md` y `destroy`.
-2. `decision-virtio.md`.
-3. Fase 9.
-4. Procedimiento final.
+**Pendiente.**
+1. Fase 9: estimar la ventana de los 4 servidores. Requiere la velocidad real de subida desde GesNet.
+2. Decisión de Integratel sobre la variante ([`decision-virtio.md`](../evidencia/decision-virtio.md)).
+3. Procedimiento final con la variante elegida (la guía de implementación ya cubre las dos).
 
 ---
 
@@ -200,6 +195,12 @@ La variante elegida se documenta en `evidencia/decision-virtio.md`.
 ### Fase 2 — Variantes VirtIO
 - Variante A sobre snapshot `virtio-A`; variante B sobre snapshot `virtio-B` (§5), ambas partiendo de `linea-base`.
 - **Variante A (2026-11-18): lista.** [`preparar-virtio-A.sh`](../scripts/origen/preparar-virtio-A.sh) instaló `kernel-2.6.18-419.el5` (rebuild CentOS 5.11, firma GPG verificada; en producción, el paquete de Red Hat) sin cambiar el predeterminado, armó su initrd con `virtio_pci`, `virtio_blk` y `mptspi`, y aplicó la preparación común. Probado en VMware: los dos kernels arrancan con LVM, `/datos`, red y los 18 archivos de prueba OK. Cambios propios: `lvm.conf`, `sysconfig/kernel`, `ifcfg-eth0`, `grub.conf` y el kernel ([`evidencia/virtio-A/cambios.txt`](../evidencia/virtio-A/cambios.txt)). Snapshot `virtio-A` con la entrada original como predeterminada.
+- **Variante B (2026-11-20): lista.**
+  - **Compilación:** en el clon aislado `rhel51-build`, con [`compilar-virtio-B.sh`](../scripts/origen/compilar-virtio-B.sh). Herramientas del DVD instaladas con `rpm`, porque el `yum` de 5.1 no lee el DVD. Fuentes de RHEL 5.3 preparadas con `rpmbuild -bp`. Los 5 drivers compilan sin tocar las fuentes, con [`kcompat.h`](../scripts/origen/kmod-virtio/kcompat.h) (`bool` y `uninitialized_var`). Los 5 cargan en `-53` sin símbolos sin resolver.
+  - **Aplicación:** [`preparar-virtio-B.sh`](../scripts/origen/preparar-virtio-B.sh) copia los `.ko` y arma un initrd paralelo y una entrada de GRUB con el mismo kernel.
+  - **Prueba en VMware:** los dos arranques OK.
+  - **Paquetes:** idénticos a la línea base.
+  - Snapshot `virtio-B-export`.
 - Antes de exportar (Fase 4), la entrada VirtIO pasa a ser la predeterminada (`default=0`): el ECS no tiene quién elija en el menú de GRUB. En VMware sigue arrancando, porque su initrd también trae `mptspi`.
 - En cada una: comprobar que **sigue arrancando en VMware** con la entrada original.
 
@@ -340,9 +341,9 @@ Cada variante VirtIO puede correr en un ambiente nuevo (destroy y deploy) para q
 
 ## 8. Criterios de éxito
 
-Estado con la variante A (la B y la elección siguen pendientes):
+Estado con las dos variantes (la elección final la aprueba Integratel):
 
-- [x] RHEL 5.1 arranca en el ECS final (variante A; falta elegir entre A y B).
+- [x] RHEL 5.1 arranca en el ECS final con las dos variantes.
 - [x] SHA-256 origen = SHA-256 destino en el **100 %** de los discos.
 - [x] La credencial de subida solo puede subir; el bucket es privado y cifrado.
 - [x] Ningún ECS tuvo IP pública; el receptor leyó OBS por la red interna.
@@ -390,8 +391,8 @@ legacy-sap-coldcopy-poc/
 │   ├── bootstrap/                # proveedor OIDC + grupo (una vez, local)
 │   └── templates/                # cloud-init del receptor
 ├── scripts/
-│   ├── origen/                   # kickstart, inventario.sh, generar-datos-prueba.sh, preparar-virtio-A.sh (B: pendiente)
+│   ├── origen/                   # kickstart, inventario.sh, generar-datos-prueba.sh, preparar-virtio-A.sh, compilar-virtio-B.sh, preparar-virtio-B.sh, kmod-virtio/kcompat.h
 │   ├── receptor/                 # coldcopy-receptor.py (OBS -> EVS, SHA-256, verificación y estabilidad por SSH)
 │   └── huawei/                   # armar-final.py, credencial-subida.py
-└── evidencia/                    # antes/, virtio-A/, acta-A.md (B y decision-virtio.md: pendientes)
+└── evidencia/                    # antes/, virtio-A/, acta-A.md, acta-B.md, decision-virtio.md, virtio-B/
 ```

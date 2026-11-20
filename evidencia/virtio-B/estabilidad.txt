@@ -1,0 +1,28 @@
+# Estabilidad virtio-B en 192.168.63.50
+antes del reinicio 1: kernel=2.6.18-53.el5 uptime=224.63s ip=192.168.63.50 montajes=3 errores_dmesg=0
+reinicio 1: SSH de vuelta en 50 s
+antes del reinicio 2: kernel=2.6.18-53.el5 uptime=22.53s ip=192.168.63.50 montajes=3 errores_dmesg=0
+reinicio 2: SSH de vuelta en 50 s
+antes del reinicio 3: kernel=2.6.18-53.el5 uptime=22.42s ip=192.168.63.50 montajes=3 errores_dmesg=0
+reinicio 3: SSH de vuelta en 50 s
+antes del reinicio 4: kernel=2.6.18-53.el5 uptime=22.28s ip=192.168.63.50 montajes=3 errores_dmesg=0
+reinicio 4: SSH de vuelta en 50 s
+antes del reinicio 5: kernel=2.6.18-53.el5 uptime=19.16s ip=192.168.63.50 montajes=3 errores_dmesg=0
+reinicio 5: SSH de vuelta en 50 s
+
+# Escritura y lectura sostenida (dd)
+== /root: escritura de 4096 MB
+4294967296 bytes (4.3 GB) copied, 16.8529 seconds, 255 MB/s
+== /root: lectura
+4294967296 bytes (4.3 GB) copied, 19.343 seconds, 222 MB/s
+== /datos: escritura de 2048 MB
+2147483648 bytes (2.1 GB) copied, 8.4639 seconds, 254 MB/s
+== /datos: lectura
+2147483648 bytes (2.1 GB) copied, 10.0364 seconds, 214 MB/s
+== datos de prueba
+18
+== dmesg (patrones de error)
+ninguno
+
+
+final: kernel=2.6.18-53.el5 uptime=86.65s ip=192.168.63.50 montajes=3 errores_dmesg=0

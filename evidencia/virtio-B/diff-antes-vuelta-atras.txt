@@ -1,0 +1,56 @@
+3c3
+< 2026-11-19T02:36:18Z
+---
+> 2026-11-20T04:36:33Z
+69c69
+< /dev/mapper/VolGroup00-LogVol00   11G 1007M  9.1G  10% /
+---
+> /dev/mapper/VolGroup00-LogVol00   11G 1009M  9.1G  10% /
+71c71
+< /dev/sda1              99M   12M   82M  13% /boot
+---
+> /dev/sda1              99M   15M   79M  16% /boot
+93c93
+< default=0
+---
+> default=1
+96a97,100
+> title RHEL 5.1 - kernel 2.6.18-53.el5 + kmod-virtio (Huawei Cloud)
+> 	root (hd0,0)
+> 	kernel /vmlinuz-2.6.18-53.el5 ro root=/dev/VolGroup00/LogVol00 console=ttyS0,115200 console=tty0 clocksource=acpi_pm
+> 	initrd /initrd-2.6.18-53.el5-virtio.img
+103c107
+< total 6243
+---
+> total 9392
+106c110,111
+< drwxr-xr-x 2 root root    1024 Nov 18 21:05 grub
+---
+> drwxr-xr-x 2 root root    1024 Nov 19 23:35 grub
+> -rw------- 1 root root 3209708 Nov 19 23:07 initrd-2.6.18-53.el5-virtio.img
+135a141
+> shpchp                 70765  0 
+138c144
+< shpchp                 70765  0 
+---
+> serio_raw              40517  0 
+141d146
+< serio_raw              40517  0 
+177d181
+< HWADDR=00:0C:29:02:E2:37
+187,188c191,192
+<           RX packets:105 errors:0 dropped:0 overruns:0 frame:0
+<           TX packets:81 errors:0 dropped:0 overruns:0 carrier:0
+---
+>           RX packets:1 errors:0 dropped:0 overruns:0 frame:0
+>           TX packets:12 errors:0 dropped:0 overruns:0 carrier:0
+190c194
+<           RX bytes:22025 (21.5 KiB)  TX bytes:13303 (12.9 KiB)
+---
+>           RX bytes:64 (64.0 b)  TX bytes:692 (692.0 b)
+244c248
+< kudzu          	0:off	1:off	2:off	3:on	4:on	5:on	6:off
+---
+> kudzu          	0:off	1:off	2:off	3:off	4:off	5:off	6:off
+293a298
+>     types = [ "virtblk", 16 ]

@@ -1,0 +1,2 @@
+kernel=2.6.18-53.el5 entrada=console=ttyS0 ip=192.168.63.50 montajes=3 errores_dmesg=0 virtio=4
+kernel=2.6.18-53.el5 entrada=original ip=192.168.63.50 montajes=3 errores_dmesg=0 virtio=0

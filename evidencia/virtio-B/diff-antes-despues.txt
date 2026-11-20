@@ -1,0 +1,123 @@
+3c3
+< 2026-11-19T02:36:18Z
+---
+> 2026-11-20T09:32:12Z
+30,31c30,31
+< Disk /dev/sda: 12.8 GB, 12884901888 bytes
+< 255 heads, 63 sectors/track, 1566 cylinders
+---
+> Disk /dev/vda: 42.9 GB, 42949672960 bytes
+> 255 heads, 63 sectors/track, 5221 cylinders
+35,36c35,36
+< /dev/sda1   *           1          13      104391   83  Linux
+< /dev/sda2              14        1566    12474472+  8e  Linux LVM
+---
+> /dev/vda1   *           1          13      104391   83  Linux
+> /dev/vda2              14        1566    12474472+  8e  Linux LVM
+38,39c38,39
+< Disk /dev/sdb: 4294 MB, 4294967296 bytes
+< 255 heads, 63 sectors/track, 522 cylinders
+---
+> Disk /dev/vdb: 10.7 GB, 10737418240 bytes
+> 255 heads, 63 sectors/track, 1305 cylinders
+43c43
+< /dev/sdb1   *           1         522     4192933+  8e  Linux LVM
+---
+> /dev/vdb1   *           1         522     4192933+  8e  Linux LVM
+46,47d45
+<   /dev/hdc: open failed: No medium found
+<   /dev/hdd: open failed: No medium found
+49,50c47,48
+<   /dev/sda2  VolGroup00    lvm2 a-   11.88G    0 
+<   /dev/sdb1  VolGroupDatos lvm2 a-    3.97G    0 
+---
+>   /dev/vda2  VolGroup00    lvm2 a-   11.88G    0 
+>   /dev/vdb1  VolGroupDatos lvm2 a-    3.97G    0 
+53,54d50
+<   /dev/hdc: open failed: No medium found
+<   /dev/hdd: open failed: No medium found
+60,61d55
+<   /dev/hdc: open failed: No medium found
+<   /dev/hdd: open failed: No medium found
+69c63
+< /dev/mapper/VolGroup00-LogVol00   11G 1007M  9.1G  10% /
+---
+> /dev/mapper/VolGroup00-LogVol00   11G 1009M  9.1G  10% /
+71c65
+< /dev/sda1              99M   12M   82M  13% /boot
+---
+> /dev/vda1              99M   15M   79M  16% /boot
+96a91,94
+> title RHEL 5.1 - kernel 2.6.18-53.el5 + kmod-virtio (Huawei Cloud)
+> 	root (hd0,0)
+> 	kernel /vmlinuz-2.6.18-53.el5 ro root=/dev/VolGroup00/LogVol00 console=ttyS0,115200 console=tty0 clocksource=acpi_pm
+> 	initrd /initrd-2.6.18-53.el5-virtio.img
+103c101
+< total 6243
+---
+> total 9392
+106c104,105
+< drwxr-xr-x 2 root root    1024 Nov 18 21:05 grub
+---
+> drwxr-xr-x 2 root root    1024 Nov 19 23:10 grub
+> -rw------- 1 root root 3209708 Nov 19 23:07 initrd-2.6.18-53.el5-virtio.img
+114c113
+< ipv6                  411425  12 
+---
+> ipv6                  411425  14 
+120a120
+> joydev                 43969  0 
+135,137c135
+< sg                     69865  0 
+< e1000                 160465  0 
+< pcspkr                 36289  0 
+---
+> floppy                 95465  0 
+139,140c137,138
+< ide_cd                 73697  0 
+< cdrom                  68713  1 ide_cd
+---
+> pcspkr                 36289  0 
+> virtio_net             47360  0 
+141a140,143
+> virtio_blk             41352  5 
+> virtio_pci             41984  0 
+> virtio_ring            37376  1 virtio_pci
+> virtio                 39300  3 virtio_net,virtio_blk,virtio_pci
+148c150
+< mptspi                 52305  3 
+---
+> mptspi                 52305  0 
+152,153c154,155
+< sd_mod                 56257  5 
+< scsi_mod              186361  6 sg,libata,mptspi,mptscsih,scsi_transport_spi,sd_mod
+---
+> sd_mod                 56257  0 
+> scsi_mod              186361  5 libata,mptspi,mptscsih,scsi_transport_spi,sd_mod
+177d178
+< HWADDR=00:0C:29:02:E2:37
+183c184
+< eth0      Link encap:Ethernet  HWaddr 00:0C:29:02:E2:37  
+---
+> eth0      Link encap:Ethernet  HWaddr FA:16:3E:E0:77:6A  
+185c186
+<           inet6 addr: fe80::20c:29ff:fe02:e237/64 Scope:Link
+---
+>           inet6 addr: fe80::f816:3eff:fee0:776a/64 Scope:Link
+187,188c188,189
+<           RX packets:105 errors:0 dropped:0 overruns:0 frame:0
+<           TX packets:81 errors:0 dropped:0 overruns:0 carrier:0
+---
+>           RX packets:71 errors:0 dropped:0 overruns:0 frame:0
+>           TX packets:72 errors:0 dropped:0 overruns:0 carrier:0
+190,191c191
+<           RX bytes:22025 (21.5 KiB)  TX bytes:13303 (12.9 KiB)
+<           Base address:0x2000 Memory:fd5c0000-fd5e0000 
+---
+>           RX bytes:9941 (9.7 KiB)  TX bytes:15902 (15.5 KiB)
+244c244
+< kudzu          	0:off	1:off	2:off	3:on	4:on	5:on	6:off
+---
+> kudzu          	0:off	1:off	2:off	3:off	4:off	5:off	6:off
+293a294
+>     types = [ "virtblk", 16 ]
