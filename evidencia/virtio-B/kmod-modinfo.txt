@@ -1,0 +1,5 @@
+virtio_blk.ko vermagic=2.6.18-53.el5 SMP mod_unload gcc-4.1 depends=virtio srcversion=66D7D1C5BFB28A573D14B16
+virtio.ko vermagic=2.6.18-53.el5 SMP mod_unload gcc-4.1 depends= srcversion=55CD00B83AD6A945CE05687
+virtio_net.ko vermagic=2.6.18-53.el5 SMP mod_unload gcc-4.1 depends=virtio srcversion=25E166C316B3248B3E3D9D7
+virtio_pci.ko vermagic=2.6.18-53.el5 SMP mod_unload gcc-4.1 depends=virtio_ring,virtio srcversion=AC1294CF38E7E6FEFBDA281
+virtio_ring.ko vermagic=2.6.18-53.el5 SMP mod_unload gcc-4.1 depends= srcversion=EA7669B5747F1FB5D9C314E

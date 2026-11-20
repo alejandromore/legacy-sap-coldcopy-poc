@@ -1,0 +1,33 @@
+# Variante B: archivos nuevos o modificados respecto de linea-base (referencia: /datos/prueba/SHA256SUMS)
+# Excluye /proc /sys /dev /tmp /var /datos y /root/virtio-B (insumos)
+/etc/adjtime
+/etc/aliases.db
+/etc/blkid/blkid.tab
+/etc/blkid/blkid.tab.old
+/etc/lvm/cache/.cache
+/etc/lvm/lvm.conf
+/etc/mtab
+/etc/printcap
+/etc/reader.conf
+/etc/smartd.conf
+/etc/sysconfig/hwconf
+/etc/sysconfig/network-scripts/ifcfg-eth0
+/lib/modules/2.6.18-53.el5/extra/virtio/virtio.ko
+/lib/modules/2.6.18-53.el5/extra/virtio/virtio_blk.ko
+/lib/modules/2.6.18-53.el5/extra/virtio/virtio_net.ko
+/lib/modules/2.6.18-53.el5/extra/virtio/virtio_pci.ko
+/lib/modules/2.6.18-53.el5/extra/virtio/virtio_ring.ko
+/lib/modules/2.6.18-53.el5/modules.alias
+/lib/modules/2.6.18-53.el5/modules.ccwmap
+/lib/modules/2.6.18-53.el5/modules.dep
+/lib/modules/2.6.18-53.el5/modules.ieee1394map
+/lib/modules/2.6.18-53.el5/modules.inputmap
+/lib/modules/2.6.18-53.el5/modules.isapnpmap
+/lib/modules/2.6.18-53.el5/modules.ofmap
+/lib/modules/2.6.18-53.el5/modules.pcimap
+/lib/modules/2.6.18-53.el5/modules.seriomap
+/lib/modules/2.6.18-53.el5/modules.symbols
+/lib/modules/2.6.18-53.el5/modules.usbmap
+# /boot (otro sistema de archivos):
+/boot/grub/grub.conf
+/boot/initrd-2.6.18-53.el5-virtio.img

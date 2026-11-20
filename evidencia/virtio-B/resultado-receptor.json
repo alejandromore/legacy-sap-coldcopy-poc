@@ -1,0 +1,41 @@
+{
+  "variante": "virtio-B",
+  "inicio": "2026-11-20T04:24:13Z",
+  "discos": [
+    {
+      "nombre": "sistema",
+      "objeto": "incoming/virtio-B/rhel51-origen-disk1.vmdk",
+      "evs_id": "e9a4928c-4077-4d45-8954-df757f4ef698",
+      "sha256_archivo": "0c0f35d824be50ce46573f186a2a7c8fdcc81e78524209d7e81c5ad86f869a9f",
+      "bytes_archivo": 415133696,
+      "seg_descarga": 4.834551095962524,
+      "archivo_ok": true,
+      "dispositivo": "/dev/vdc",
+      "seg_limpieza": 49.35824513435364,
+      "metodo": "conversor-python",
+      "seg_escritura": 6.593504428863525,
+      "sha256_destino": "a5c7d64e825b0621cfd82687468497985500a5135c7444dff3d9ebbd99c498f1",
+      "seg_hash": 66.22161650657654,
+      "sha256_origen": "a5c7d64e825b0621cfd82687468497985500a5135c7444dff3d9ebbd99c498f1",
+      "contenido_ok": true
+    },
+    {
+      "nombre": "datos",
+      "objeto": "incoming/virtio-B/rhel51-origen-disk2.vmdk",
+      "evs_id": "6c2aadc1-be8e-4f28-aaad-c474772d7b87",
+      "sha256_archivo": "0845d9cd4c805315100d54640a7de7eb28a6f909208b1d9a773b69c33eb183de",
+      "bytes_archivo": 1084140544,
+      "seg_descarga": 12.101102828979492,
+      "archivo_ok": true,
+      "dispositivo": "/dev/vdb",
+      "metodo": "conversor-python",
+      "seg_escritura": 3.7643473148345947,
+      "sha256_destino": "2817d20c80921457cf5dbd861fa59dde5920693982918e1a62b0f5830b27b057",
+      "seg_hash": 18.418081521987915,
+      "sha256_origen": "2817d20c80921457cf5dbd861fa59dde5920693982918e1a62b0f5830b27b057",
+      "contenido_ok": true
+    }
+  ],
+  "fin": "2026-11-20T04:26:54Z",
+  "todo_ok": true
+}

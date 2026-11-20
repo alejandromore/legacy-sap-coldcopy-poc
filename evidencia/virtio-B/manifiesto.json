@@ -1,0 +1,22 @@
+{
+  "variante": "virtio-B",
+  "discos": [
+    {
+      "nombre": "sistema",
+      "objeto": "incoming/virtio-B/rhel51-origen-disk1.vmdk",
+      "sha256_archivo": "0c0f35d824be50ce46573f186a2a7c8fdcc81e78524209d7e81c5ad86f869a9f",
+      "sha256_crudo": "a5c7d64e825b0621cfd82687468497985500a5135c7444dff3d9ebbd99c498f1",
+      "bytes_virtuales": 12884901888,
+      "evs_id": "e9a4928c-4077-4d45-8954-df757f4ef698",
+      "limpiar": true
+    },
+    {
+      "nombre": "datos",
+      "objeto": "incoming/virtio-B/rhel51-origen-disk2.vmdk",
+      "sha256_archivo": "0845d9cd4c805315100d54640a7de7eb28a6f909208b1d9a773b69c33eb183de",
+      "sha256_crudo": "2817d20c80921457cf5dbd861fa59dde5920693982918e1a62b0f5830b27b057",
+      "bytes_virtuales": 4294967296,
+      "evs_id": "6c2aadc1-be8e-4f28-aaad-c474772d7b87"
+    }
+  ]
+}

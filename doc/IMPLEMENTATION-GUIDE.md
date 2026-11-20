@@ -372,13 +372,13 @@ sync; poweroff
 2. **GesNet sube los VMDK.** El manifiesto va **al final**, porque es la señal para que el receptor empiece:
    ```bash
    B=obs://<bucket>/incoming/<servidor>-<fecha>/
-   obsutil cp /export/<NOMBRE_VM>/ $B -r -f -flat -include="*.vmdk" -p=8 -ps=64MB -vmd5 -config=obsutil-gesnet.config
+   obsutil cp /export/<NOMBRE_VM>/ $B -r -f -flat -include="*.vmdk" -p=8 -ps=64MB -config=obsutil-gesnet.config
    obsutil cp /export/<NOMBRE_VM>/<NOMBRE_VM>.ovf $B -config=obsutil-gesnet.config
    obsutil cp /export/<NOMBRE_VM>/<NOMBRE_VM>.mf  $B -config=obsutil-gesnet.config
    obsutil cp manifiesto.json $B -config=obsutil-gesnet.config     # ÚLTIMO
    ```
    - `-p` sube partes en paralelo.
-   - `-vmd5` verifica cada objeto al terminar.
+   - **No usar `-vmd5`.** El bucket está cifrado del lado servidor y con cifrado el ETag de OBS no es el MD5 del contenido: la verificación falla siempre (`VerifyMd5Error`, comprobado en laboratorio). La integridad la da el SHA-256 que el receptor calcula sobre cada VMDK descargado (`sha256_archivo`).
 3. **Reanudar** tras un corte o con una credencial nueva: repetir el mismo comando de copia. `obsutil` guarda puntos de control y retoma desde donde quedó.
 4. Registrar la duración y los bytes de cada archivo: es la velocidad real de GesNet (§7).
 
@@ -542,6 +542,7 @@ La estimación completa de los cuatro servidores (6.5 TB, 4.5 TB, 1.75 TB y 500 
 | El receptor sin Internet no puede instalar `qemu-img` | El agente trae un conversor de VMDK propio, validado bit a bit |
 | Un rol IAM personalizado en la agencia no dio acceso a OBS | El permiso lo da una **política del bucket** que nombra a la agencia; nada de `OBS OperateAccess` |
 | La credencial temporal reducida dura en la práctica ~60 min | Se emite justo antes de subir y se reanuda con una nueva |
+| `obsutil -vmd5` falla con un bucket cifrado (el ETag no es el MD5) | Se sube sin `-vmd5`; la verificación es el SHA-256 en el receptor |
 | Sin SSH ni EIP, el único diagnóstico es la consola serie | El agente y el kernel del RHEL (con `console=ttyS0`) escriben en ella |
 | El ECS no tiene quién elija en GRUB | La entrada VirtIO pasa a ser la predeterminada en la Fase 3; en VMware igual arranca |
 | GitHub emite el claim `sub` con los IDs numéricos de dueño y repo | La regla OIDC acepta los dos formatos |
